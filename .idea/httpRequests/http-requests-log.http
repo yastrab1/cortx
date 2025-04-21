@@ -1,0 +1,16 @@
+GET http://localhost:3000/sse
+User-Agent: IntelliJ HTTP Client/WebStorm 2024.3.1.1
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+###
+
+GET http://localhost:3000/initConnection
+User-Agent: IntelliJ HTTP Client/WebStorm 2024.3.1.1
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+<> 2025-04-20T193926.404.html
+
+###
+

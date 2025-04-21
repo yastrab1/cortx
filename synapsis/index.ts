@@ -3,11 +3,8 @@ import {Experimental_StdioMCPTransport as StdioMCPTransport} from 'ai/mcp-stdio'
 import * as dotenv from 'dotenv';
 
 
-import {createGoogleGenerativeAI} from '@ai-sdk/google';
+import {createGoogleGenerativeAI, google} from '@ai-sdk/google';
 
-const google = createGoogleGenerativeAI({
-    apiKey: "AIzaSyCVarjrsqlmhZkOxN2UwQUfTGlyQG8mxbU"
-})
 
 async function callMaster(messages: CoreMessage[], mcpClient: any) {
     const response = await generateText({
@@ -15,10 +12,13 @@ async function callMaster(messages: CoreMessage[], mcpClient: any) {
         tools: await mcpClient.tools(),
         messages: messages,
     })
+    console.log("Response: ", response.text)
     const toolResult = response.toolResults?.[0];
     const toolCall = response.toolCalls?.[0];
 
     if (toolResult && toolCall) {
+        console.log("Called tool ",toolResult.toolName,"with args: ", toolCall.args, " and got result: ", toolResult.result, "");
+        console.log("Intermidiate model thought: ", response.text, "")
         const continuationMessages = [
             messages[0],messages[messages.length-1],
             {
@@ -58,8 +58,8 @@ async function main() {
             url: "http://localhost:3000/sse",
         }
     })
-    const prompt = "Navigate to https://www.dennikn.sk/, then search for the latest news in slovakia" +
-        "Give agenticBrowse a smaller, fine-grained instructions.NEVER USE agenticBrowse before navigating to a webpage. ALWAYS use GOTO tool before it"
+    const prompt = "Use the ddgr python tool to search the latest news in slovakia and print them in readable format. Download any packages necessary, the os is ubuntu latest" +
+        "To use terminal, use the terminal tool. Download packages with the sudo apt -y  command in terminal. DDGR is a command line tool. Try your absolute hardest to fulfill this request. Use only ddgr with the --json flag. Optimize your terminal commands for non-interactivity, try to use flags and so on. The terminal will hang and timeout when waiting for user input."
 
     return callMaster([{role: 'user', content: [{type: 'text', text: prompt}]}], mcpClient)
 };
