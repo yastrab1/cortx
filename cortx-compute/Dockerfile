@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM python:latest
 
 # Install necessary packages
 RUN apt-get update && \

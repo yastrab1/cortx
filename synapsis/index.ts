@@ -3,11 +3,8 @@ import {Experimental_StdioMCPTransport as StdioMCPTransport} from 'ai/mcp-stdio'
 import * as dotenv from 'dotenv';
 
 
-import {createGoogleGenerativeAI} from '@ai-sdk/google';
+import {createGoogleGenerativeAI, google} from '@ai-sdk/google';
 
-const google = createGoogleGenerativeAI({
-    apiKey: "AIzaSyCVarjrsqlmhZkOxN2UwQUfTGlyQG8mxbU"
-})
 
 async function callMaster(messages: CoreMessage[], mcpClient: any) {
     const response = await generateText({
@@ -61,7 +58,7 @@ async function main() {
             url: "http://localhost:3000/sse",
         }
     })
-    const prompt = "Use the ddgr to search the latest news in slovakia. Download any packages necessary, the os is ubuntu latest" +
+    const prompt = "Use the ddgr python tool to search the latest news in slovakia and print them in readable format. Download any packages necessary, the os is ubuntu latest" +
         "To use terminal, use the terminal tool. Download packages with the sudo apt -y  command in terminal. DDGR is a command line tool. Try your absolute hardest to fulfill this request. Use only ddgr with the --json flag. Optimize your terminal commands for non-interactivity, try to use flags and so on. The terminal will hang and timeout when waiting for user input."
 
     return callMaster([{role: 'user', content: [{type: 'text', text: prompt}]}], mcpClient)
