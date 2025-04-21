@@ -1,5 +1,5 @@
 ### Initialize Stagehand
-GET http://localhost:3000/initConnection
+GET http://localhost:3000/sse
 
 ### Navigate to a URL
 POST localhost:3000/goto/7e645965-3a46-416e-9a09-8b061c11b348
@@ -36,3 +36,5 @@ Content-Type: application/json
 {
   "instruction": "Click on top headline and summarize the page of that article"
 }
+
+###
