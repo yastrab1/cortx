@@ -55,14 +55,13 @@ server.tool("terminal",
 
         let outputBuffer = "";
         // Send the command
-        stream.write(command + "\n");
+        stream.write("\n"+command + "\n");
         console.log(`[Executing command] ${command}`);
 
         // Collect output
         const outputCollector = new Promise<string>(resolve => {
             stream.on('data', chunk => {
                 const text = chunk.toString();
-                if (text.startsWith('{') && text.includes('stream')) return;
                 outputBuffer += text;
                 console.log(`[Received] ${text}`);
                 if (outputBuffer.includes(`echo "${marker}"`)){
