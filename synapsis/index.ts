@@ -14,14 +14,14 @@ async function main() {
     const mcpClient = await createMCPClient({
         transport: {
             type: "sse",
-            url: "http://localhost:3000/sse", // Ensure your MCP server is running here
+            url: "http://localhost:3001/sse",
         }
     });
 
     const originalPrompt = "Search the latest news in slovakia and print them in readable format. Download any packages necessary, the os is ubuntu latest." +
-        "To use terminal, use the terminal tool. Download packages with the sudo apt -y command in terminal. DDGR is a command line tool. Try your absolute hardest to fulfill this request. Use only ddgr with the --json flag. Optimize your terminal commands for non-interactivity, try to use flags and so on. The terminal will hang and timeout when waiting for user input.";
+        "To use terminal, use the terminal tool. Download packages with the sudo apt -y command in terminal. Try your absolute hardest to fulfill this request. Optimize your terminal commands for non-interactivity, try to use flags and so on. The terminal will hang and timeout when waiting for user input. You have full access trhough the terminal to whatever you want.";
 
-    const result = await runAIAgent(originalPrompt, 3, mcpClient);
+    const result = await runAIAgent(originalPrompt, 10, mcpClient);
     console.log("Agent result:", result);
 }
 
