@@ -30,7 +30,7 @@ server.tool("terminal",
         if (!sessions[context.sessionId]) {
             const container = await docker.createContainer({
                 Image: 'cortx-compute:latest',
-                Cmd: ['bash'],
+                Cmd: ['bash',"-l","-i"],
                 Tty: true,
                 OpenStdin: true,
                 StdinOnce: false,
@@ -62,8 +62,12 @@ server.tool("terminal",
         const outputCollector = new Promise<string>(resolve => {
             stream.on('data', chunk => {
                 const text = chunk.toString();
+                if (text.startsWith('{') && text.includes('stream')) return;
                 outputBuffer += text;
                 console.log(`[Received] ${text}`);
+                if (outputBuffer.includes(`echo "${marker}"`)){
+                    outputBuffer = outputBuffer.replace(`echo "${marker}"`, "");
+                }
                 if (outputBuffer.includes(marker)) {
                     console.log("Marking the end");
                     stream.end()
@@ -94,7 +98,7 @@ app.post("/messages", async (req: Request, res: Response) => {
     await transport.handlePostMessage(req, res);
 });
 
-const port = 3000;
+const port = 3001;
 app.listen(port, () => {
     console.log(`Printer Store MCP SSE Server is running on http://localhost:${port}/sse`);
     console.log("/sse")
