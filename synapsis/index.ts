@@ -8,7 +8,7 @@ import {createGoogleGenerativeAI, google} from '@ai-sdk/google';
 
 async function callMaster(messages: CoreMessage[], mcpClient: any) {
     const response = await generateText({
-        model: google('gemini-2.0-flash-exp'),
+        model: google('gemini-2.0-flash-001'),
         tools: await mcpClient.tools(),
         messages: messages,
     })
@@ -18,7 +18,6 @@ async function callMaster(messages: CoreMessage[], mcpClient: any) {
 
     if (toolResult && toolCall) {
         console.log("Called tool ",toolResult.toolName,"with args: ", toolCall.args, " and got result: ", toolResult.result, "");
-        console.log("Intermidiate model thought: ", response.text, "")
         const continuationMessages = [
             messages[0],messages[messages.length-1],
             {
@@ -52,15 +51,24 @@ async function callMaster(messages: CoreMessage[], mcpClient: any) {
 async function main() {
     dotenv.config();
     // console.log("API key:", process.env.GOOGLE_GENERATIVEAI_API_KEY);
-    const mcpClient = await createMCPClient({
+    // const browser = await createMCPClient({
+    //     transport: {
+    //         type: "sse",
+    //         url: "http://localhost:3000/sse",
+    //     }
+    // })
+    const terminal = await createMCPClient({
         transport: {
             type: "sse",
-            url: "http://localhost:3000/sse",
+            url: "http://localhost:3001/sse",
         }
     })
-    const prompt = "Use the ddgr python tool to search the latest news in slovakia and print them in readable format. Download any packages necessary, the os is ubuntu latest" +
-        "To use terminal, use the terminal tool. Download packages with the sudo apt -y  command in terminal. DDGR is a command line tool. Try your absolute hardest to fulfill this request. Use only ddgr with the --json flag. Optimize your terminal commands for non-interactivity, try to use flags and so on. The terminal will hang and timeout when waiting for user input."
+    // const browserTools = await browser.tools() as ToolSet;
+    const terminalTools = await terminal.tools() as ToolSet;
+    // const tools = [...browserTools, ...terminalTools] as ToolSet
+    const prompt = "Use the ddgr python tool with pip to search the latest news articles in slovakia and print them in readable format. Download any packages necessary, the os is ubuntu latest" +
+        "To use terminal, use the terminal tool. Try your absolute hardest to fulfill this request. Use only ddgr with the --json flag. Optimize your terminal commands for non-interactivity, try to use flags and so on. The terminal will hang and timeout when waiting for user input. To run python packages, use the python -m [name] [args]. To install python package, use python -m pip install [name]"
 
-    return callMaster([{role: 'user', content: [{type: 'text', text: prompt}]}], mcpClient)
+    return callMaster([{role: 'user', content: [{type: 'text', text: prompt}]}], terminal)
 };
 main().then(r => console.log(r));
