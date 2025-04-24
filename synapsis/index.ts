@@ -3,7 +3,7 @@ import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdi
 import * as dotenv from 'dotenv';
 import { createGoogleGenerativeAI, google } from '@ai-sdk/google';
 import { z } from 'zod'; // Import Zod for schema definition
-import { runAIAgent } from './ai';
+import { createAIAgent, runAIAgent } from './ai';
 
 // Load environment variables
 dotenv.config();
@@ -18,10 +18,9 @@ async function main() {
         }
     });
 
-    const originalPrompt = "Search the latest news in slovakia and print them in readable format. Download any packages necessary, the os is ubuntu latest." +
-        "To use terminal, use the terminal tool. Download packages with the sudo apt -y command in terminal. Try your absolute hardest to fulfill this request. Optimize your terminal commands for non-interactivity, try to use flags and so on. The terminal will hang and timeout when waiting for user input. You have full access trhough the terminal to whatever you want.";
+    const originalPrompt = "List all primes untill 5000 and print them in readable format.";
 
-    const result = await runAIAgent(originalPrompt, 10, mcpClient);
+    const result = await createAIAgent(originalPrompt, 10, 3001);
     console.log("Agent result:", result);
 }
 

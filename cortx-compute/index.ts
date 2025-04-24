@@ -6,6 +6,7 @@ import {Request, Response} from "express";
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp";
 import * as tty from "node:tty";
 import {randomUUID} from "node:crypto";
+import { createAIAgent } from "./../synapsis/ai";
 
 const server = new McpServer({
     name: "Demo",
@@ -84,6 +85,17 @@ server.tool("terminal",
         return {
             content: [{type: "text", text: result}]
         };
+    }
+);
+
+server.tool("run-ai-agent",
+    {
+        prompt: z.string().describe("The prompt for the sub-agent to complete."),
+        maxIterations: z.number().describe("Maximum iterations for the sub-agent run."),
+    },
+    async ({prompt, maxIterations}) => {
+        const response = await createAIAgent(prompt, maxIterations, 3001);
+        return { content: [{type: "text", text: response}] };
     }
 );
 
