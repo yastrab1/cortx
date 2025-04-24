@@ -1,0 +1,10 @@
+cortx-browser/.env
+cortx-browser/node_modules
+cortx-browser/.idea
+cortx-compute/.env
+cortx-compute/node_modules
+cortx-compute/.idea
+synapsis/.env
+synapsis/node_modules
+synapsis/.idea
+.idea
