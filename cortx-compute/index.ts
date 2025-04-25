@@ -1,11 +1,13 @@
 import {z} from 'zod';
 import {SSEServerTransport} from "@modelcontextprotocol/sdk/server/sse.js";
-import express from "express";
+import express, {Request, Response} from "express";
 import Docker, {Container} from 'dockerode';
-import {Request, Response} from "express";
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp";
-import * as tty from "node:tty";
 import {randomUUID} from "node:crypto";
+import {RequestHandlerExtra} from "@modelcontextprotocol/sdk/shared/protocol";
+import {ServerNotification, ServerRequest} from "@modelcontextprotocol/sdk/types";
+import * as readline from "node:readline";
+import Stream from "node:stream";
 
 const server = new McpServer({
     name: "Demo",
@@ -15,36 +17,34 @@ const server = new McpServer({
 const app = express();
 const docker = new Docker();
 
-const sessions: { [sessionID: string]: Container } = {};
+const sessions: { [sessionID: string]: {container:Container,stream:ReadWriteStream} } = {};
 
-server.tool("terminal",
-    {command: z.string()},
-    async ({command}, context) => {
-        if (!context.sessionId) {
-            return {content: [{type: "text", text: "No session id"}]}
-        }
-        const marker = randomUUID()
-        command += ` ; echo "${marker}"`
+async function callTerminal(sessionId: string | undefined, command: string): Promise<string> {
+    if (!sessionId) {
+        return "No session ID provided"
+    }
+    const marker = randomUUID()
 
-        // Create or retrieve container
-        if (!sessions[context.sessionId]) {
-            const container = await docker.createContainer({
-                Image: 'cortx-compute:latest',
-                Cmd: ['bash',"-l","-i"],
-                Tty: true,
-                OpenStdin: true,
-                StdinOnce: false,
-                AttachStdin: true,
-                AttachStdout: true,
-                AttachStderr: true,
-            });
+    const escapedCommand = command.replace(/(["`\\$])/g, '\\$1');
 
-            await container.start();
-            sessions[context.sessionId] = container;
-        }
+    // Wrap in eval and append marker
+    command = `eval "${escapedCommand}"; echo "${marker}"`;
 
-        const container = sessions[context.sessionId];
 
+    // Create or retrieve container
+    if (!sessions[sessionId]) {
+        const container = await docker.createContainer({
+            Image: 'cortx-compute:latest',
+            Cmd: ['bash', "-l", "-i"],
+            Tty: true,
+            OpenStdin: true,
+            StdinOnce: false,
+            AttachStdin: true,
+            AttachStdout: true,
+            AttachStderr: true,
+        });
+
+        await container.start();
         const stream = await container.attach({
             stream: true,
             stdin: true,
@@ -52,41 +52,57 @@ server.tool("terminal",
             stderr: true,
             hijack: true,
         });
+        sessions[sessionId] = {container,stream};
+    }
 
-        let outputBuffer = "";
-        // Send the command
-        stream.write("\n"+command + "\n");
-        console.log(`[Executing command] ${command}`);
+    const container = sessions[sessionId].container;
+    const stream = sessions[sessionId].stream;
 
-        // Collect output
-        const outputCollector = new Promise<string>(resolve => {
-            stream.on('data', chunk => {
-                const text = chunk.toString();
-                outputBuffer += text;
-                console.log(`[Received] ${text}`);
-                if (outputBuffer.includes(`echo "${marker}"`)){
-                    outputBuffer = outputBuffer.replace(`echo "${marker}"`, "");
-                }
-                if (outputBuffer.includes(marker)) {
-                    console.log("Marking the end");
-                    stream.end()
-                }
-            });
-            stream.on('end', () => {
-                resolve(outputBuffer);
-            })
 
+    let outputBuffer = "";
+    // Send the command
+    stream.write("\n" + command + "\n");
+    // console.log(`[Executing command] ${command}`);
+
+    // Collect output
+    const outputCollector = new Promise<string>(resolve => {
+        stream.on('data', chunk => {
+            const text = chunk.toString();
+            outputBuffer += text;
+            // console.log(`[Received] ${text}`);
+            if (outputBuffer.includes(`echo "${marker}"`)) {
+                outputBuffer = outputBuffer.replace(`echo "${marker}"`, "");
+            }
+            if (outputBuffer.includes(marker)) {
+                // console.log("Marking the end");
+                stream.end()
+            }
         });
+        stream.on('end', () => {
+            resolve(outputBuffer);
+        })
 
-        const result = await outputCollector;
+    });
 
+    return await outputCollector;
+}
+
+server.tool("terminal",
+    {command: z.string()},
+    async ({command}:{command:string}, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) => {
+        if (!extra.sessionId) return ["No session id provided"]
+        const result = await callTerminal(extra.sessionId, command);
 
         return {
-            content: [{type: "text", text: result}]
-        };
+            content: [
+                {
+                    type: "text" as const,
+                    text: result
+                }
+            ]
+        } as const;
     }
 );
-
 let transport: SSEServerTransport;
 app.get("/sse", async (req: Request, res: Response) => {
     transport = new SSEServerTransport("/messages", res);
@@ -103,3 +119,20 @@ app.listen(port, () => {
     console.log("/sse")
     console.log("/messages")
 });
+
+// async function dev() {
+//     while (true) {
+//         const rl = readline.createInterface({
+//             input: process.stdin,
+//             output: process.stdout
+//         });
+//
+//         const questionPromise = new Promise(resulve => rl.question("Prompt:", async function (command) {
+//             const result = await callTerminal("1",command);
+//             console.log("Returned:"+result);
+//             rl.close();
+//             resulve(result);
+//         }))
+//         await questionPromise
+//     }
+// }
