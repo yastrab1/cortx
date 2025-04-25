@@ -30,8 +30,8 @@ async function generatePlan(massages: CoreMessage[], originalPrompt: string): Pr
     let planMessages = [...massages, planMessage];
 
     const planResponse = await generateObject({
-        model: openai('o4-mini-2025-04-16'),
-        //model: google('gemini-2.0-flash-exp'),
+        // model: openai('o4-mini-2025-04-16'),
+        model: google('gemini-2.5-flash-preview-04-17'),
         messages: planMessages,
         schema: planSchema,
     });
