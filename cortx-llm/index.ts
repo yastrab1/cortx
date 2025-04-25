@@ -64,7 +64,6 @@ async function initialize() {
 server.tool("list_models", {
     systemPrompt: z.string(),
     task: z.string(),
-    toolScopes: z.enum(toolScopeValues),
     model: ModelEnum
 }, async ({model, systemPrompt, task}) => {
     let i = 0;
@@ -94,15 +93,6 @@ server.tool("list_models", {
     }
 
     const agentLLM = providerObject(model)
-
-    const tools = {}
-    for (const toolObj of toolsByTopic) {
-        tools = {
-            ...tools,
-            ...await server.tools({
-                scope: toolScope
-            })}
-    }
 
     const result = await generateText({
         model: agentLLM,

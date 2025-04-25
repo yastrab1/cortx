@@ -10,7 +10,7 @@ import {ServerNotification, ServerRequest} from "@modelcontextprotocol/sdk/types
 import * as readline from "node:readline";
 import Stream from "node:stream";
 
-import { createAIAgent } from "./../synapsis/ai";
+import {createAIAgent} from "./../synapsis/ai";
 
 const server = new McpServer({
     name: "Demo",
@@ -20,7 +20,7 @@ const server = new McpServer({
 const app = express();
 const docker = new Docker();
 
-const sessions: { [sessionID: string]: {container:Container,stream:ReadWriteStream} } = {};
+const sessions: { [sessionID: string]: { container: Container, stream: ReadWriteStream } } = {};
 
 async function callTerminal(sessionId: string | undefined, command: string): Promise<string> {
     if (!sessionId) {
@@ -55,7 +55,7 @@ async function callTerminal(sessionId: string | undefined, command: string): Pro
             stderr: true,
             hijack: true,
         });
-        sessions[sessionId] = {container,stream};
+        sessions[sessionId] = {container, stream};
     }
 
     const container = sessions[sessionId].container;
@@ -69,7 +69,7 @@ async function callTerminal(sessionId: string | undefined, command: string): Pro
 
     // Collect output
     const outputCollector = new Promise<string>(resolve => {
-        stream.on('data', chunk => {
+        stream.on('data', (chunk: { toString: () => string; }) => {
             const text = chunk.toString();
             outputBuffer += text;
             // console.log(`[Received] ${text}`);
@@ -91,8 +91,10 @@ async function callTerminal(sessionId: string | undefined, command: string): Pro
 }
 
 server.tool("terminal",
-    {command: z.string()},
-    async ({command}:{command:string}, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) => {
+    {
+        command: z.string()
+    },
+    async ({command}: { command: string }, extra) => {
         if (!extra.sessionId) return ["No session id provided"]
         const result = await callTerminal(extra.sessionId, command);
 
@@ -105,16 +107,15 @@ server.tool("terminal",
             ]
         } as const;
     }
-
-}
+)
 server.tool("run-ai-agent",
     {
         prompt: z.string().describe("The prompt for the sub-agent to complete."),
         maxIterations: z.number().describe("Maximum iterations for the sub-agent run."),
     },
-    async ({prompt, maxIterations}) => {
+    async ({prompt, maxIterations},extra) => {
         const response = await createAIAgent(prompt, maxIterations, 3001);
-        return { content: [{type: "text", text: response}] };
+        return {content: [{type: "text", text: response}]};
     }
 );
 
