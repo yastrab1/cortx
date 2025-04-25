@@ -4,10 +4,13 @@ import express, {Request, Response} from "express";
 import Docker, {Container} from 'dockerode';
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp";
 import {randomUUID} from "node:crypto";
+
 import {RequestHandlerExtra} from "@modelcontextprotocol/sdk/shared/protocol";
 import {ServerNotification, ServerRequest} from "@modelcontextprotocol/sdk/types";
 import * as readline from "node:readline";
 import Stream from "node:stream";
+
+import { createAIAgent } from "./../synapsis/ai";
 
 const server = new McpServer({
     name: "Demo",
@@ -102,7 +105,20 @@ server.tool("terminal",
             ]
         } as const;
     }
+
+}
+server.tool("run-ai-agent",
+    {
+        prompt: z.string().describe("The prompt for the sub-agent to complete."),
+        maxIterations: z.number().describe("Maximum iterations for the sub-agent run."),
+    },
+    async ({prompt, maxIterations}) => {
+        const response = await createAIAgent(prompt, maxIterations, 3001);
+        return { content: [{type: "text", text: response}] };
+    }
 );
+
+
 let transport: SSEServerTransport;
 app.get("/sse", async (req: Request, res: Response) => {
     transport = new SSEServerTransport("/messages", res);
