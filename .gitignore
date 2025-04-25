@@ -7,4 +7,10 @@ cortx-compute/.idea
 synapsis/.env
 synapsis/node_modules
 synapsis/.idea
+cortx-llm/node_modules
+cortx-llm/.env
+cortx-llm/.idea
+cortx-ui/node_modules
+cortx-ui/.env
+cortx-ui/.idea
 .idea
