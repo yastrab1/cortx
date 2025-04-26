@@ -1,6 +1,6 @@
-import {CoreMessage, generateObject, GenerateObjectResult} from "ai";
-import {z} from "zod";
-import {Plan, RawPlan, RawTask, Task} from "./types";
+import { CoreMessage, generateObject, GenerateObjectResult } from "ai";
+import { z } from "zod";
+import { Plan, RawPlan, RawTask, Task } from "./types";
 
 const plannerOutputSchema = z.object({
     subtasks: z.array(z.object({
@@ -12,7 +12,7 @@ const plannerOutputSchema = z.object({
     })),
 });
 
-function taskToString(task: Task): string {
+export function taskToString(task: Task): string {
     return `Task Name: ${task.name}\n` +
         `Goal: ${task.goal}\n` +
         `Dependencies: ${task.dependencies.join(", ")}\n` +
@@ -27,13 +27,13 @@ function taskToMessages(task: Task): CoreMessage[] {
 
     const systemMessage: CoreMessage = { role: "system", content: systemPrompt };
     const userMessage: CoreMessage = { role: "user", content: userPrompt };
-    
-    return[systemMessage, userMessage];
+
+    return [systemMessage, userMessage];
 }
 
 function planArrayToDictionary(plans: RawPlan): { [key: string]: RawTask } {
     let planDictionary: { [key: string]: RawTask } = {};
-    
+
     for (const task of plans.subtasks) {
         planDictionary[task.name] = task;
         planDictionary[task.name].model = task.model;
@@ -45,7 +45,7 @@ function planArrayToDictionary(plans: RawPlan): { [key: string]: RawTask } {
 
 function planDictionaryToArray(planDictionary: { [key: string]: Task }): Plan {
     let plans: Plan = { subtasks: [] };
-    
+
     for (const taskName in planDictionary) {
         plans.subtasks.push(planDictionary[taskName]);
     }
@@ -55,33 +55,33 @@ function planDictionaryToArray(planDictionary: { [key: string]: Task }): Plan {
 
 function emptyDependencyCopyTask(task: RawTask): Task {
     return {
-            name:task.name,
-            goal:task.goal,
-            agentDefinition:task.agentDefinition,
-            context:task.context,
-            model:task.model,
-            dependencies:[],
-            upcomingTasks:[],
-        }
+        name: task.name,
+        goal: task.goal,
+        agentDefinition: task.agentDefinition,
+        context: task.context,
+        model: task.model,
+        dependencies: [],
+        upcomingTasks: [],
+    }
 }
 
-function resolveDependenciesAndUpcomingToObjects(planDictionary: { [key: string]: RawTask }){
+function resolveDependenciesAndUpcomingToObjects(planDictionary: { [key: string]: RawTask }) {
     const parsedPlanDictionary: { [key: string]: Task } = {};
-    for (const task of Object.values(planDictionary)){
+    for (const task of Object.values(planDictionary)) {
         parsedPlanDictionary[task.name] = emptyDependencyCopyTask(task);
-        for (const dependencyName of task.dependencies){
+        for (const dependencyName of task.dependencies) {
             const dependencyTask = planDictionary[dependencyName];
-            if(!Object.keys(parsedPlanDictionary).includes(dependencyName)){
+            if (!Object.keys(parsedPlanDictionary).includes(dependencyName)) {
                 parsedPlanDictionary[task.name].dependencies.push(emptyDependencyCopyTask(dependencyTask))
-            }else{
+            } else {
                 parsedPlanDictionary[task.name].dependencies.push(parsedPlanDictionary[dependencyName])
             }
         }
-        for (const upcomingName of task.upcomingTasks){
+        for (const upcomingName of task.upcomingTasks) {
             const dependencyTask = planDictionary[upcomingName];
-            if(!Object.keys(parsedPlanDictionary).includes(upcomingName)){
+            if (!Object.keys(parsedPlanDictionary).includes(upcomingName)) {
                 parsedPlanDictionary[task.name].upcomingTasks.push(emptyDependencyCopyTask(dependencyTask))
-            }else{
+            } else {
                 parsedPlanDictionary[task.name].upcomingTasks.push(parsedPlanDictionary[upcomingName])
             }
 
@@ -104,13 +104,12 @@ export function postprocessResponse(plans: RawPlan): Plan {
     }
 
     return planDictionaryToArray(planDictionary);
-
 }
 
 export async function generatePlan(task: Task): Promise<Plan> {
     const promptMessages = taskToMessages(task);
 
-    const {response} = await generateObject({
+    const { response } = await generateObject({
         model: task.model,
         messages: promptMessages,
         schema: plannerOutputSchema,

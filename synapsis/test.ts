@@ -1,6 +1,6 @@
 import {RawPlan} from "./types";
 import {google} from "@ai-sdk/google";
-import {postprocessResponse} from "./plannerModel";
+import {postprocessResponse, taskToString} from "./plannerModel";
 import {createLayeredExecutionGraph} from "./engine";
 
 const mockRawPlan: RawPlan = {
@@ -54,5 +54,17 @@ const mockRawPlan: RawPlan = {
 };
 
 const postprocessedPlan = postprocessResponse(mockRawPlan);
+console.log("Postprocessed Plan:", postprocessedPlan);
+
+for (const task of postprocessedPlan.subtasks) {
+    console.log(`Task: ${taskToString(task)}`);
+    for (const dep of task.dependencies) {
+        console.log(`  Dependency: ${taskToString(dep)}`);
+    }
+    for (const up of task.upcomingTasks) {
+        console.log(`  Upcoming Task: ${taskToString(up)}`);
+    }
+}
+
 const graph = createLayeredExecutionGraph(postprocessedPlan);
 console.log(graph);
