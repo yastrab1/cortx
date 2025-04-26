@@ -1,5 +1,3 @@
-import {LanguageModel} from "ai";
-
 export type RawTask = {
     name: string;
     goal: string;
@@ -7,7 +5,7 @@ export type RawTask = {
     agentDefinition: string;
     context: string;
     upcomingTasks: string[];
-    model: LanguageModel;
+    model: string;
 }
 
 export type Task = {
@@ -17,7 +15,7 @@ export type Task = {
     agentDefinition: string;
     context: string;
     upcomingTasks: Task[];
-    model: LanguageModel;
+    model: string;
 }
 
 export type RawPlan = {
