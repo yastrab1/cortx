@@ -1,8 +1,19 @@
-import {ExecutionGraph, Plan, RawPlan, RawTask, Task} from "./types";
+import {ExecutionGraph, ExecutionLayer, Plan, RawPlan, RawTask, Task} from "./types";
 import {generatePlan} from "./plannerModel"
-import {CoreMessage, experimental_createMCPClient, generateText, ToolSet} from "ai";
+import {CoreMessage, experimental_createMCPClient, generateText, LanguageModel, ToolSet} from "ai";
+import {openai} from "@ai-sdk/openai";
+import {anthropic} from "@ai-sdk/anthropic";
+import {google} from "@ai-sdk/google";
+import {perplexity} from "@ai-sdk/perplexity";
+import dotenv from "dotenv";
 
-const mcpURLRegistry: string[] = ["localhost:3000/sse"]
+dotenv.config();
+
+const systemPrompt =" TRY YOUR ABSOLUTE HARDEST," +
+    " IF YOU DONT KNOW JUST THINK OF SOMETHING CLOSE ENOUGH. NEVER ASK OR HANG." +
+    "Use your terminal tool if necessary, write into files using echo. The OS is alpine with python"
+
+const mcpURLRegistry: string[] = [" http://localhost:3001/sse"]
 
 class MCPRegistry {
     private static instance: MCPRegistry;
@@ -42,47 +53,87 @@ class MCPRegistry {
     }
 }
 
+function resolveModel(model: string):LanguageModel {
+    const modelRegistry = {
+        "openai": ["gpt-3.5-turbo", "gpt-4", "gpt-4-32k"] ,
+        "google": ["gemini-pro", "gemini-2.0-flash"] ,
+        "anthropic": ["claude-2", "claude-3-opus", "claude-3-sonnet"],
+    };
+    let i = 0;
+    let provider = "";
+    const modelsList = Object.values(modelRegistry) as string[][];
+    for (const modelList of modelsList) {
+        if (modelList.includes(model)) {
+            provider = Object.keys(modelRegistry)[i]
+        }
+        i += 1;
+    }
+    let providerObject = undefined;
+    if (provider == "anthropic") {
+        providerObject = anthropic
+    } else if (provider == "openai") {
+        providerObject = openai
+    } else if (provider == "google") {
+        providerObject = google
+    } else if (provider == "perplexity") {
+        providerObject = perplexity
+    }else{
+        throw new Error("Invalid Model!")
+    }
+    return providerObject(model);
+}
 
-async function executeTask(plan: RawPlan, context: string) {
-    const task = plan.subtasks[0] as RawTask;
-    const messages = [{role: "system", content: task.goal}, {role: "user", content: context}] as CoreMessage[]
+
+async function executeTask(task:Task, context: CoreMessage[]) {
+
+    const messages = [{role: "user", content: task.goal+systemPrompt}, ...context] as CoreMessage[]
+
+    console.log(messages)
+    const registry = await MCPRegistry.getInstance();
     const result = await generateText({
-        model: task.model,
+        model: resolveModel(task.model),
         messages: messages,
-        tools: (await MCPRegistry.getInstance()).getTools()
+        tools: registry.getTools()
     })
     return result.text;
 }
 
-export function createLayeredExecutionGraph(plan: Plan) {
-    const graph: ExecutionGraph = {layers: []};
-    let currentLayer = 0;
-    while (true) {
-        if(graph.layers.length <= currentLayer){
-            graph.layers.push({tasks:[]})
+
+export function findFreeNodes(plan: Plan) {
+    const layer:ExecutionLayer = {tasks:[]}
+
+
+    for (const task of plan.subtasks) {
+        if (task.dependencies.length === 0) {
+            layer.tasks.push(task);
         }
-        for (const task of plan.subtasks) {
-            if (task.dependencies.length === 0) {
-                graph.layers[currentLayer].tasks.push(task);
-            }
-        }
-        for (const task of plan.subtasks) {
-            for (const removedTask of graph.layers[currentLayer].tasks) {
-                task.dependencies = task.dependencies.filter(task=>task!==removedTask)
-            }
-        }
-        for (const task of plan.subtasks){
-            plan.subtasks = plan.subtasks.filter(otherTask=>!graph.layers[currentLayer].tasks.includes(otherTask))
-        }
-        if (graph.layers[currentLayer].tasks.length === 0) {
-            graph.layers.splice(currentLayer, 1);
-            break;
-        }
-        currentLayer += 1;
     }
-    return graph;
+    for (const task of plan.subtasks) {
+        for (const removedTask of layer.tasks) {
+            task.dependencies = task.dependencies.filter(task=>task!==removedTask)
+        }
+    }
+    for (const task of plan.subtasks){
+        plan.subtasks = plan.subtasks.filter(otherTask=>!layer.tasks.includes(otherTask))
+    }
+
+    return layer;
 }
 
-async function execute(plan: Plan) {
-    createLayeredExecutionGraph(plan)
+export async function execute(plan: Plan) {
+    const planCopy = structuredClone(plan);
+    let nodes = findFreeNodes(planCopy)
+    const outputs:{[taskName:string]:CoreMessage} = {};
+    while (nodes.tasks.length > 0) {
+        for (const task of nodes.tasks) {
+            const context = []
+            for (const dependency of task.dependencies) {
+                context.push(outputs[dependency.name])
+            }
+            const result = await executeTask(task,context)
+            outputs[task.name] = {role: "user", content: result}
+        }
+        nodes = findFreeNodes(planCopy)
+    }
+    return outputs;
 }

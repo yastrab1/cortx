@@ -4,13 +4,8 @@ import express, {Request, Response} from "express";
 import Docker, {Container} from 'dockerode';
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp";
 import {randomUUID} from "node:crypto";
-
-import {RequestHandlerExtra} from "@modelcontextprotocol/sdk/shared/protocol";
-import {ServerNotification, ServerRequest} from "@modelcontextprotocol/sdk/types";
-import * as readline from "node:readline";
-import Stream from "node:stream";
-
-import {createAIAgent} from "./../synapsis/ai";
+import {Duplex} from "node:stream"
+import {sessionManager} from "./SessionManager";
 
 const server = new McpServer({
     name: "Demo",
@@ -20,7 +15,8 @@ const server = new McpServer({
 const app = express();
 const docker = new Docker();
 
-const sessions: { [sessionID: string]: { container: Container, stream: ReadWriteStream } } = {};
+const sessions: { [sessionID: string]: { container: Container, stream: Duplex } } = {};
+
 
 async function callTerminal(sessionId: string | undefined, command: string): Promise<string> {
     if (!sessionId) {
@@ -35,7 +31,9 @@ async function callTerminal(sessionId: string | undefined, command: string): Pro
 
 
     // Create or retrieve container
-    if (!sessions[sessionId]) {
+    if (!sessionManager.has(sessionId)) {
+        console.log("Launching new container with sessionID",sessionId)
+        console.log(sessions)
         const container = await docker.createContainer({
             Image: 'cortx-compute:latest',
             Cmd: ['bash', "-l", "-i"],
@@ -54,12 +52,12 @@ async function callTerminal(sessionId: string | undefined, command: string): Pro
             stdout: true,
             stderr: true,
             hijack: true,
-        });
-        sessions[sessionId] = {container, stream};
+        }) as Duplex;
+        sessionManager.set(sessionId,container,stream)
     }
 
-    const container = sessions[sessionId].container;
-    const stream = sessions[sessionId].stream;
+    const container = sessionManager.get(sessionId).container;
+    const stream = sessionManager.get(sessionId).stream;
 
 
     let outputBuffer = "";
@@ -78,12 +76,9 @@ async function callTerminal(sessionId: string | undefined, command: string): Pro
             }
             if (outputBuffer.includes(marker)) {
                 // console.log("Marking the end");
-                stream.end()
+                resolve(outputBuffer);
             }
         });
-        stream.on('end', () => {
-            resolve(outputBuffer);
-        })
 
     });
 
@@ -94,9 +89,9 @@ server.tool("terminal",
     {
         command: z.string()
     },
-    async ({command}: { command: string }, extra) => {
+    async ({command}: { command: string }, extra: { sessionId?: string; }) => {
         if (!extra.sessionId) return ["No session id provided"]
-        const result = await callTerminal(extra.sessionId, command);
+        const result = await callTerminal("1", command);
 
         return {
             content: [
@@ -105,19 +100,19 @@ server.tool("terminal",
                     text: result
                 }
             ]
-        } as const;
+        };
     }
 )
-server.tool("run-ai-agent",
-    {
-        prompt: z.string().describe("The prompt for the sub-agent to complete."),
-        maxIterations: z.number().describe("Maximum iterations for the sub-agent run."),
-    },
-    async ({prompt, maxIterations},extra) => {
-        const response = await createAIAgent(prompt, maxIterations, 3001);
-        return {content: [{type: "text", text: response}]};
-    }
-);
+// server.tool("run-ai-agent",
+//     {
+//         prompt: z.string().describe("The prompt for the sub-agent to complete."),
+//         maxIterations: z.number().describe("Maximum iterations for the sub-agent run."),
+//     },
+//     async ({prompt, maxIterations},extra) => {
+//         const response = await createAIAgent(prompt, maxIterations, 3001);
+//         return {content: [{type: "text", text: response}]};
+//     }
+// );
 
 
 let transport: SSEServerTransport;

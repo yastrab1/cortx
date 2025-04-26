@@ -1,58 +1,71 @@
 import {RawPlan} from "./types";
 import {google} from "@ai-sdk/google";
 import {postprocessResponse} from "./plannerModel";
-import {createLayeredExecutionGraph} from "./engine";
+import {execute, findFreeNodes} from "./engine";
 
-const mockRawPlan: RawPlan = {
+const simplePokemonApiRawPlan: RawPlan = {
     subtasks: [
         {
-            name: "Setup Environment",
-            goal: "Prepare the development environment with necessary tools.",
-            dependencies: [],
-            agentDefinition: "EnvironmentAgent",
-            context: "Ensure Node.js, TypeScript, and project dependencies are installed.",
-            upcomingTasks: ["Initialize Project"],
-            model: google("gemini-2.0-flash"),
-        },
-        {
             name: "Initialize Project",
-            goal: "Create the initial project structure.",
-            dependencies: ["Setup Environment"],
-            agentDefinition: "ProjectInitializerAgent",
-            context: "Create folders, setup base files, configure tsconfig.json.",
-            upcomingTasks: ["Implement Core Features"],
-            model: google("gemini-2.0-flash"),
+            goal: "Set up a basic Python project with necessary folders and files.",
+            dependencies: [],
+            agentDefinition: "A Python developer who sets up projects cleanly and efficiently.",
+            context: "Create a new project folder, initialize a virtual environment, and create initial files (main.py, requirements.txt).",
+            upcomingTasks: ["Install Required Packages", "Create Pokémon List"],
+            model: "gemini-2.0-flash"
         },
         {
-            name: "Implement Core Features",
-            goal: "Develop the main functionality of the application.",
+            name: "Install Required Packages",
+            goal: "Install FastAPI and Uvicorn to enable creating a REST API.",
             dependencies: ["Initialize Project"],
-            agentDefinition: "FeatureDevelopmentAgent",
-            context: "Follow the provided feature list and build core modules.",
-            upcomingTasks: ["Write Tests"],
-            model: google("gemini-2.0-flash"),
+            agentDefinition: "A Python developer with experience in web APIs.",
+            context: "Use pip to install FastAPI and Uvicorn, and record them in requirements.txt.",
+            upcomingTasks: ["Create API Endpoint"],
+            model: "gemini-2.0-flash"
         },
         {
-            name: "Write Tests",
-            goal: "Write unit and integration tests for core features.",
-            dependencies: ["Implement Core Features"],
-            agentDefinition: "TestingAgent",
-            context: "Use Jest and Testing Library for testing.",
-            upcomingTasks: ["Deploy Application"],
-            model: google("gemini-2.0-flash"),
+            name: "Create Pokémon List",
+            goal: "Create a simple list of Pokémon names to serve from the API.",
+            dependencies: ["Initialize Project"],
+            agentDefinition: "A Python developer who can create simple Python structures.",
+            context: "Inside main.py or a separate file, define a list containing 10 random Pokémon names as strings.",
+            upcomingTasks: ["Create API Endpoint"],
+            model: "gemini-2.0-flash"
         },
         {
-            name: "Deploy Application",
-            goal: "Deploy the application to production.",
-            dependencies: ["Write Tests"],
-            agentDefinition: "DeploymentAgent",
-            context: "Use Vercel or AWS for deployment.",
+            name: "Create API Endpoint",
+            goal: "Create a FastAPI endpoint that returns a random Pokémon from the list.",
+            dependencies: ["Install Required Packages", "Create Pokémon List"],
+            agentDefinition: "A FastAPI expert who can quickly build and test endpoints.",
+            context: "Create a GET endpoint at `/pokemon` that returns a random name from the Pokémon list.",
+            upcomingTasks: ["Test the API"],
+            model: "gemini-2.0-flash"
+        },
+        {
+            name: "Test the API",
+            goal: "Test the endpoint locally to ensure it returns a random Pokémon.",
+            dependencies: ["Create API Endpoint"],
+            agentDefinition: "A developer familiar with local testing using Uvicorn and HTTP clients like curl or Postman.",
+            context: "Run the API locally with Uvicorn and perform a few test calls to `/pokemon` to check randomness and correctness.",
+            upcomingTasks: ["Prepare Deployment Instructions"],
+            model: "gemini-2.0-flash"
+        },
+        {
+            name: "Prepare Deployment Instructions",
+            goal: "Write clear instructions on how to run the API locally.",
+            dependencies: ["Test the API"],
+            agentDefinition: "A technical writer who can create clean and easy-to-follow README guides.",
+            context: "Create a simple README or write instructions to install dependencies, run the app with Uvicorn, and test the endpoint.",
             upcomingTasks: [],
-            model: google("gemini-2.0-flash"),
-        },
+            model: "gemini-2.0-flash"
+        }
     ]
 };
 
-const postprocessedPlan = postprocessResponse(mockRawPlan);
-const graph = createLayeredExecutionGraph(postprocessedPlan);
-console.log(graph);
+async function test() {
+    const postprocessedPlan = postprocessResponse(simplePokemonApiRawPlan);
+    const graph = await execute(postprocessedPlan);
+    console.log("graph",graph);
+
+}
+test()
