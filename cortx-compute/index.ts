@@ -15,104 +15,82 @@ const server = new McpServer({
 const app = express();
 const docker = new Docker();
 
-const sessions: { [sessionID: string]: { container: Container, stream: Duplex } } = {};
 
 
-async function callTerminal(sessionId: string | undefined, command: string): Promise<string> {
-    if (!sessionId) {
-        return "No session ID provided"
+async function callTerminal(sessionId: string, command: string): Promise<string> {
+    console.log(`[Handler] Process ID: ${process.pid}`);
+    if (!sessionId) { // Should not happen if called with "1"
+        return "No session ID provided";
     }
-    const marker = randomUUID()
-
+    const marker = randomUUID();
     const escapedCommand = command.replace(/(["`\\$])/g, '\\$1');
-
-    // Wrap in eval and append marker
     command = `eval "${escapedCommand}"; echo "${marker}"`;
 
+    try {
+        // Use the new atomic method
+        console.log(`[callTerminal] Calling sessionManager.getOrCreate for ID: '${sessionId}'`);
+        const { container, stream } = await sessionManager.getOrCreate(sessionId);
+        console.log(`[callTerminal] Got container/stream for ID: '${sessionId}'`);
 
-    // Create or retrieve container
-    if (!sessionManager.has(sessionId)) {
-        console.log("Launching new container with sessionID",sessionId)
-        console.log(sessions)
-        const container = await docker.createContainer({
-            Image: 'cortx-compute:latest',
-            Cmd: ['bash', "-l", "-i"],
-            Tty: true,
-            OpenStdin: true,
-            StdinOnce: false,
-            AttachStdin: true,
-            AttachStdout: true,
-            AttachStderr: true,
+        let outputBuffer = "";
+        const outputCollector = new Promise<string>((resolve, reject) => {
+            const dataListener = (chunk: Buffer) => {
+                const text = chunk.toString();
+                outputBuffer += text;
+                if (outputBuffer.includes(marker)) {
+                    stream.removeListener('data', dataListener);
+
+                    const cleanOutput = outputBuffer.substring(0, outputBuffer.indexOf(`echo "${marker}"`)).trim();
+                    outputBuffer = outputBuffer.replace(`echo "${marker}"`, "");
+                    outputBuffer = outputBuffer.replace(marker, "");
+
+                    console.log(`[callTerminal] Finished command`);
+                    resolve(cleanOutput);
+                }
+            };
+            stream.on('data', dataListener);
+            stream.on('error', (err) => {
+                console.error(`[callTerminal] Stream error for session ${sessionId}:`, err);
+                stream.removeListener('data', dataListener);
+                reject(err);
+            });
+            stream.on('end', () => {
+                console.warn(`[callTerminal] Stream ended for session ${sessionId}`);
+                stream.removeListener('data', dataListener);
+            });
+
+            // Send command
+            stream.write("\n" + command + "\n");
         });
 
-        await container.start();
-        const stream = await container.attach({
-            stream: true,
-            stdin: true,
-            stdout: true,
-            stderr: true,
-            hijack: true,
-        }) as Duplex;
-        sessionManager.set(sessionId,container,stream)
+        return await outputCollector;
+
+    } catch (error) {
+        console.error(`[callTerminal] Error processing command for session ${sessionId}:`, error);
+
+        return `Error: ${error instanceof Error ? error.message : String(error)}`;
     }
-
-    const container = sessionManager.get(sessionId).container;
-    const stream = sessionManager.get(sessionId).stream;
-
-
-    let outputBuffer = "";
-    // Send the command
-    stream.write("\n" + command + "\n");
-    // console.log(`[Executing command] ${command}`);
-
-    // Collect output
-    const outputCollector = new Promise<string>(resolve => {
-        stream.on('data', (chunk: { toString: () => string; }) => {
-            const text = chunk.toString();
-            outputBuffer += text;
-            // console.log(`[Received] ${text}`);
-            if (outputBuffer.includes(`echo "${marker}"`)) {
-                outputBuffer = outputBuffer.replace(`echo "${marker}"`, "");
-            }
-            if (outputBuffer.includes(marker)) {
-                // console.log("Marking the end");
-                resolve(outputBuffer);
-            }
-        });
-
-    });
-
-    return await outputCollector;
 }
 
-server.tool("terminal",
+server.tool(
+    "terminal",
     {
         command: z.string()
     },
-    async ({command}: { command: string }, extra: { sessionId?: string; }) => {
+    async ({command}:{command:string}, extra: { sessionId?: string; }) => {
         if (!extra.sessionId) return ["No session id provided"]
         const result = await callTerminal("1", command);
 
         return {
             content: [
                 {
-                    type: "text" as const,
+                    type: "text",
                     text: result
                 }
             ]
         };
     }
 )
-// server.tool("run-ai-agent",
-//     {
-//         prompt: z.string().describe("The prompt for the sub-agent to complete."),
-//         maxIterations: z.number().describe("Maximum iterations for the sub-agent run."),
-//     },
-//     async ({prompt, maxIterations},extra) => {
-//         const response = await createAIAgent(prompt, maxIterations, 3001);
-//         return {content: [{type: "text", text: response}]};
-//     }
-// );
 
 
 let transport: SSEServerTransport;
