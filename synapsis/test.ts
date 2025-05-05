@@ -1,6 +1,6 @@
-import {RawPlan} from "./types";
+import {RawPlan, Task} from "./types";
 import {google} from "@ai-sdk/google";
-import {postprocessResponse} from "./plannerModel";
+import {generatePlan, postprocessResponse} from "./plannerModel";
 import {execute, findFreeNodes} from "./engine";
 
 const simplePokemonApiRawPlan: RawPlan = {
@@ -63,7 +63,16 @@ const simplePokemonApiRawPlan: RawPlan = {
 };
 
 async function test() {
-    const postprocessedPlan = postprocessResponse(simplePokemonApiRawPlan);
+    const postprocessedPlan = await generatePlan({
+        name:"Python pokemon api",
+        goal:"Create a basic python REST api that returns a random pokemon. !!!!As a model parameter in the task, always use gemini-2.0-flash !!!!. When running terminal tools, always use single quotes with echo",
+        dependencies:[],
+        upcomingTasks:[],
+        agentDefinition:"A planner model",
+        context:"",
+        model:google("gemini-2.5-pro-exp-03-25"),
+    });
+    console.log("plan",postprocessedPlan);
     const graph = await execute(postprocessedPlan);
     console.log("graph",graph);
 

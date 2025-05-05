@@ -1,6 +1,14 @@
 import {ExecutionGraph, ExecutionLayer, Plan, RawPlan, RawTask, Task} from "./types";
 import {generatePlan} from "./plannerModel"
-import {CoreMessage, experimental_createMCPClient, generateText, LanguageModel, ToolSet} from "ai";
+import {
+    CoreMessage,
+    experimental_createMCPClient,
+    generateText,
+    LanguageModel,
+    Tool,
+    ToolResultUnion,
+    ToolSet
+} from "ai";
 import {openai} from "@ai-sdk/openai";
 import {anthropic} from "@ai-sdk/anthropic";
 import {google} from "@ai-sdk/google";
@@ -9,7 +17,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const systemPrompt =" TRY YOUR ABSOLUTE HARDEST," +
+const systemPrompt = " TRY YOUR ABSOLUTE HARDEST," +
     " IF YOU DONT KNOW JUST THINK OF SOMETHING CLOSE ENOUGH. NEVER ASK OR HANG." +
     "Use your terminal tool if necessary, write into files using echo. The OS is alpine with python"
 
@@ -53,10 +61,10 @@ class MCPRegistry {
     }
 }
 
-function resolveModel(model: string):LanguageModel {
+function resolveModel(model: string): LanguageModel {
     const modelRegistry = {
-        "openai": ["gpt-3.5-turbo", "gpt-4", "gpt-4-32k"] ,
-        "google": ["gemini-pro", "gemini-2.0-flash"] ,
+        "openai": ["gpt-3.5-turbo", "gpt-4", "gpt-4-32k"],
+        "google": ["gemini-2.5-pro-preview-03-25", "gemini-2.0-flash"],
         "anthropic": ["claude-2", "claude-3-opus", "claude-3-sonnet"],
     };
     let i = 0;
@@ -77,30 +85,49 @@ function resolveModel(model: string):LanguageModel {
         providerObject = google
     } else if (provider == "perplexity") {
         providerObject = perplexity
-    }else{
+    } else {
         throw new Error("Invalid Model!")
     }
     return providerObject(model);
 }
 
 
-async function executeTask(task:Task, context: CoreMessage[]) {
+async function executeTask(task: Task, context: CoreMessage[]) {
 
-    const messages = [{role: "user", content: task.goal+systemPrompt}, ...context] as CoreMessage[]
+    const messages = [{role: "user", content: task.goal + systemPrompt}, ...context] as CoreMessage[]
 
     console.log(messages)
     const registry = await MCPRegistry.getInstance();
-    const result = await generateText({
+    const response = await generateText({
         model: resolveModel(task.model),
         messages: messages,
         tools: registry.getTools()
     })
-    return result.text;
+
+    const toolResult:any[] = response.toolResults;
+    const toolCall = response.toolCalls;
+
+
+
+    if (toolResult && toolCall) {
+        const continuationMessages = [
+            ...messages,
+
+        ];
+        for (const tool of toolResult){
+            continuationMessages.push({
+                role:"user",
+                content:JSON.stringify(tool)
+            })
+        }
+        // await executeTask(task, continuationMessages)
+    }
+
+    return response.text;
 }
 
-
 export function findFreeNodes(plan: Plan) {
-    const layer:ExecutionLayer = {tasks:[]}
+    const layer: ExecutionLayer = {tasks: []}
 
 
     for (const task of plan.subtasks) {
@@ -110,11 +137,11 @@ export function findFreeNodes(plan: Plan) {
     }
     for (const task of plan.subtasks) {
         for (const removedTask of layer.tasks) {
-            task.dependencies = task.dependencies.filter(task=>task!==removedTask)
+            task.dependencies = task.dependencies.filter(task => task !== removedTask)
         }
     }
-    for (const task of plan.subtasks){
-        plan.subtasks = plan.subtasks.filter(otherTask=>!layer.tasks.includes(otherTask))
+    for (const task of plan.subtasks) {
+        plan.subtasks = plan.subtasks.filter(otherTask => !layer.tasks.includes(otherTask))
     }
 
     return layer;
@@ -123,14 +150,14 @@ export function findFreeNodes(plan: Plan) {
 export async function execute(plan: Plan) {
     const planCopy = structuredClone(plan);
     let nodes = findFreeNodes(planCopy)
-    const outputs:{[taskName:string]:CoreMessage} = {};
+    const outputs: { [taskName: string]: CoreMessage } = {};
     while (nodes.tasks.length > 0) {
         for (const task of nodes.tasks) {
             const context = []
             for (const dependency of task.dependencies) {
                 context.push(outputs[dependency.name])
             }
-            const result = await executeTask(task,context)
+            const result = await executeTask(task, context)
             outputs[task.name] = {role: "user", content: result}
         }
         nodes = findFreeNodes(planCopy)

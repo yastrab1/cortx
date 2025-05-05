@@ -9,6 +9,7 @@ const plannerOutputSchema = z.object({
         dependencies: z.array(z.string()),
         agentDefinition: z.string(),
         context: z.string(),
+        model:z.string()
     })),
 });
 
@@ -22,7 +23,16 @@ function taskToString(task: Task): string {
 }
 
 function taskToMessages(task: Task): CoreMessage[] {
-    const systemPrompt = "You are a task planner AI. Your job is to break down the given task into smaller subtasks.";
+    const systemPrompt = "You are a planner model in a ai agent network. Your task is to create graph of tasks. Each task has a dependency list, that cannot be executed before those task.First, make just a draft. Then refine, until its good enough and add details. !ONLY SPLIT THE TASK PROVIDED IN THE USER INPUT, DO NOT PLAN AHEAD, THATS WHY YOU KNOW YOUR SUCCESSOR! !Incentivize parallelism, use the principle of least dependencies!Each task is in a format. If the task is not worth splitting, just output one and it will automatically execute:\n" +
+        "NAME:\n" +
+        "GOAL: (the high level goal of that task)\n" +
+        "Agent definition: (The system prompt of the agent, eg \"You are a master in writing newsletters, keep them concise\")\n" +
+        "Output schema(optional)\n" +
+        "Context(from its dependencies, you do not plan this part)\n" +
+        "Dependencies:(the agents dependencies)\n" +
+        "Successors:(the agents successors)\n" +
+        " The prompt from the user was:";
+
     const userPrompt = taskToString(task);
 
     const systemMessage: CoreMessage = { role: "system", content: systemPrompt };
@@ -116,5 +126,6 @@ export async function generatePlan(task: Task): Promise<Plan> {
         schema: plannerOutputSchema,
     });
 
-    return postprocessResponse(response.body as RawPlan);
+    const plan = JSON.parse(response.body.candidates[0].content.parts[0].text) as RawPlan
+    return postprocessResponse(plan);
 }
