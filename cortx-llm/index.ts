@@ -13,33 +13,8 @@ const server = new McpServer({
 const app = express();
 
 
-server.tool("list_models", {
-    systemPrompt: z.string(),
-    task: z.string(),
-    model: ModelEnum
-}, async ({model, systemPrompt, task}) => {
-
-
-
-
-    const result = await generateText({
-        model: agentLLM,
-        messages: [
-            {role: "system", content: systemPrompt},
-            {role: "user", content: task}
-        ]
-    })
-
-    return {
-        content: [{
-            type: "text" as const,
-            text: `Models for ${model} are`
-        }]
-    }
-});
 
 async function main() {
-    await initialize();
     let transport: SSEServerTransport;
 
     app.get("/sse", async (req: Request, res: Response) => {
