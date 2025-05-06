@@ -51,7 +51,7 @@ export class SessionManager {
                 Image: 'cortx-compute:latest',
                 Cmd: ['bash', "-l", "-i"],
                 Tty: true, OpenStdin: true, StdinOnce: false, AttachStdin: true,
-                AttachStdout: true, AttachStderr: true,
+                AttachStdout: false, AttachStderr: true,
                 HostConfig: { AutoRemove: true } // Good practice
             });
             await container.start();
