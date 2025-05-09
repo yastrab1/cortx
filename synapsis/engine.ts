@@ -61,18 +61,20 @@ class MCPRegistry {
     }
 }
 
-function resolveModel(model: string): LanguageModel {
-    const modelRegistry = {
-        "openai": ["gpt-3.5-turbo", "gpt-4", "gpt-4-32k"],
-        "google": ["gemini-2.5-pro-preview-03-25", "gemini-2.0-flash"],
-        "anthropic": ["claude-2", "claude-3-opus", "claude-3-sonnet"],
+export function resolveModel(model: string): LanguageModel {
+    const providerPrefixes = {
+        "openai": ["gpt"],
+        "google": ["gemini"],
+        "anthropic": ["claude"],
     };
     let i = 0;
     let provider = "";
-    const modelsList = Object.values(modelRegistry) as string[][];
+    const modelsList = Object.values(providerPrefixes) as string[][];
     for (const modelList of modelsList) {
-        if (modelList.includes(model)) {
-            provider = Object.keys(modelRegistry)[i]
+        for (const prefix of modelList) {
+            if (model.startsWith(prefix)) {
+                provider = Object.keys(providerPrefixes)[i]
+            }
         }
         i += 1;
     }
@@ -98,15 +100,15 @@ async function executeTask(task: Task, context: CoreMessage[]) {
 
     console.log(messages)
     const registry = await MCPRegistry.getInstance();
+    console.log("running task with model",task.model)
     const response = await generateText({
         model: resolveModel(task.model),
         messages: messages,
         tools: registry.getTools()
     })
 
-    const toolResult:any[] = response.toolResults;
+    const toolResult: any[] = response.toolResults;
     const toolCall = response.toolCalls;
-
 
 
     if (toolResult && toolCall) {
@@ -114,10 +116,10 @@ async function executeTask(task: Task, context: CoreMessage[]) {
             ...messages,
 
         ];
-        for (const tool of toolResult){
+        for (const tool of toolResult) {
             continuationMessages.push({
-                role:"user",
-                content:JSON.stringify(tool)
+                role: "user",
+                content: JSON.stringify(tool)
             })
         }
         // await executeTask(task, continuationMessages)

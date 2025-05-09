@@ -3,7 +3,6 @@ import {google} from "@ai-sdk/google";
 import {generatePlan} from "./plannerModel";
 import {execute, findFreeNodes} from "./engine";
 import {postprocessResponse, taskToString} from "./plannerModel";
-import {createLayeredExecutionGraph} from "./engine";
 
 const simplePokemonApiRawPlan: RawPlan = {
     subtasks: [
@@ -64,7 +63,7 @@ const simplePokemonApiRawPlan: RawPlan = {
     ]
 };
 
-export function test(){
+export async function test(){
     const postprocessedPlan = postprocessResponse(simplePokemonApiRawPlan);
     console.log("Postprocessed Plan:", postprocessedPlan);
 
@@ -78,7 +77,7 @@ export function test(){
         }
     }
 
-    const graph = createLayeredExecutionGraph(postprocessedPlan);
+    const graph = await execute(postprocessedPlan);
     console.log(graph);
 }
 test()

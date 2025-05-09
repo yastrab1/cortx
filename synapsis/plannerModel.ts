@@ -1,6 +1,7 @@
 import { CoreMessage, generateObject, GenerateObjectResult } from "ai";
 import { z } from "zod";
 import { Plan, RawPlan, RawTask, Task } from "./types";
+import {resolveModel} from "./engine";
 
 const plannerOutputSchema = z.object({
     subtasks: z.array(z.object({
@@ -75,7 +76,7 @@ function emptyDependencyCopyTask(task: RawTask): Task {
     }
 }
 
-function resolveDependenciesAndUpcomingToObjects(planDictionary: { [key: string]: RawTask }) {
+function resolveObjectsAndModels(planDictionary: { [key: string]: RawTask }) {
     const parsedPlanDictionary: { [key: string]: Task } = {};
     for (const task of Object.values(planDictionary)) {
         parsedPlanDictionary[task.name] = emptyDependencyCopyTask(task);
@@ -100,10 +101,10 @@ function resolveDependenciesAndUpcomingToObjects(planDictionary: { [key: string]
     }
     return parsedPlanDictionary;
 }
-
 export function postprocessResponse(plans: RawPlan): Plan {
     let rawPlanDictionary = planArrayToDictionary(plans);
-    const planDictionary = resolveDependenciesAndUpcomingToObjects(rawPlanDictionary);
+    const planDictionary = resolveObjectsAndModels(rawPlanDictionary);
+
 
     for (const task of Object.values(planDictionary)) {
         for (const dependency of task.dependencies) {
@@ -119,12 +120,14 @@ export function postprocessResponse(plans: RawPlan): Plan {
 export async function generatePlan(task: Task): Promise<Plan> {
     const promptMessages = taskToMessages(task);
 
-    const { response } = await generateObject({
-        model: task.model,
+    const response = await generateObject({
+        model: resolveModel(task.model),
         messages: promptMessages,
         schema: plannerOutputSchema,
     });
-
-    const plan = JSON.parse(response.body.candidates[0].content.parts[0].text) as RawPlan
+    if(!response.object){
+        throw Error
+    }
+    const plan = response.object as RawPlan
     return postprocessResponse(plan);
 }

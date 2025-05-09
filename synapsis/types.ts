@@ -1,3 +1,5 @@
+import {LanguageModel, LanguageModelV1} from "ai";
+
 export type RawTask = {
     name: string;
     goal: string;
