@@ -32,6 +32,7 @@ function taskToMessages(task: Task): CoreMessage[] {
         "Context(from its dependencies, you do not plan this part)\n" +
         "Dependencies:(the agents dependencies)\n" +
         "Successors:(the agents successors)\n" +
+        "Always use the model gemini-2.0-flash"+
         " The prompt from the user was:";
 
     const userPrompt = taskToString(task);

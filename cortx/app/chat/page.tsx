@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from "react"
 import { Send, Sparkles, Loader2, ArrowLeft } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
+import prompt from "@/lib/synapsis";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([
@@ -43,29 +44,17 @@ export default function ChatPage() {
 
     try {
       // Send message to the specified endpoint
-      const response = await fetch("http://localhost:8000/sendMessage", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: input,
-          // history: messages,
-        }),
-      })
+      const response = await prompt(input)
 
-      if (!response.ok) {
-        throw new Error("Failed to send message")
-      }
 
-      const data = await response.json()
+      const data = {content:response.response}
 
       // Add AI response
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: data.response || "I'm having trouble processing that right now.",
+          content: data.content || "I'm having trouble processing that right now.",
         },
       ])
     } catch (error) {

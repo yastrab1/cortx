@@ -1,0 +1,39 @@
+'use server'
+import {
+    CoreMessage,
+    experimental_createMCPClient as createMCPClient,
+    generateText,
+    generateObject,
+    Tool,
+    tool,
+    ToolSet
+} from 'ai';
+import {Experimental_StdioMCPTransport as StdioMCPTransport} from 'ai/mcp-stdio';
+import * as dotenv from 'dotenv';
+import {createGoogleGenerativeAI, google} from '@ai-sdk/google';
+import {z} from 'zod';
+import {RawPlan} from "./types";
+import express, {json} from "express";
+import {generatePlan} from "./plannerModel";
+import {execute} from "./engine";
+import cors from "cors";
+import {verbosePlan} from "./logger";
+// Load environment variables
+dotenv.config();
+
+
+export default async function prompt(prompt: string) {
+    const plan = await generatePlan({
+        name: "master",
+        goal: prompt,
+        agentDefinition: "You are a master in planning",
+        context: "",
+        dependencies: [],
+        upcomingTasks: [],
+        model: "gemini-2.0-flash"
+    })
+    verbosePlan(plan)
+    console.log(await execute(plan))
+    return {response: plan.subtasks.map(task=>task.name).join("\n")}
+}
+
