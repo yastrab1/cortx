@@ -11,10 +11,11 @@ import TaskTree from "./task-rendering/task-tree/task-tree"
 import ExecutionTimeline from "./execution-timeline"
 import { ExecutionControls } from "./execution-controls"
 import { ExecutionLogs } from "./execution-logs"
+import { ExecutionState, TaskStatus, TaskData } from "@/lib/types"
 
 export default function AgentInterface() {
   const [isProcessing, setIsProcessing] = useState(false)
-  const [prompt, setPrompt] = useState(initialPrompt)
+  /*const [prompt, setPrompt] = useState(initialPrompt)
   
   const {
     state,
@@ -63,15 +64,70 @@ export default function AgentInterface() {
     } catch (err) {
       handleError("Error starting process", err)
     }
+  }*/
+
+  const rootTask: TaskData = {
+    id: "root",
+    status: "planning",
+    name: "Root Task",
+    goal: "This is the root task",
+    dependencies: [],
+    agentDefinition: "",
+    context: [],
+    upcomingTasks: [],
+    model: "",
+    planningSubresults: [],
+    executionSubresults: [],
+    planSubtasks: ["subtask1"],
+    taskResult: {
+      type: "text",
+      content: "This is the root task",
+    },
+
+    taskCreationTime: 0,
+    taskStartTime: 0,
+    taskEndPlanningTime: 0,
+    taskEndExecutionTime: 0,
+    taskEndTime: 0,
+
+    expanded: false,
   }
+  const subtask1: TaskData = {
+    id: "subtask1",
+    status: "planning",
+    name: "Subtask 1",
+    goal: "This is the subtask 1",
+    dependencies: ["root"],
+    agentDefinition: "",
+    context: [],
+    upcomingTasks: [],
+    model: "",
+    planningSubresults: [],
+    executionSubresults: [],
+    planSubtasks: [],
+    taskResult: {
+      type: "text",
+      content: "This is the subtask 1",
+    },
+
+    taskCreationTime: 0,
+    taskStartTime: 0,
+    taskEndPlanningTime: 0,
+    taskEndExecutionTime: 0,
+    taskEndTime: 0,
+
+    expanded: false,
+  }
+  const execState: ExecutionState = { tasks: { root: rootTask, subtask1: subtask1 }, taskCountByStatus: {} as Record<TaskStatus, number>, errors: [], executionLog: [] };
+  const [state, setState] = useState<ExecutionState>(execState);
 
   return (
     <div className="space-y-6">
       <ExecutionControls
-        isProcessing={isProcessing}
-        progress={state.progress}
-        onStart={startProcess}
-        error={state.error}
+        isProcessing={/*isProcessing*/false}
+        progress={/*state.progress*/0}
+        onStart={/*startProcess*/() => {}}
+        error={/*state.error*/null}
       />
 
       <Tabs defaultValue="tree" className="w-full">
@@ -83,18 +139,18 @@ export default function AgentInterface() {
 
         <TabsContent value="tree" className="mt-0">
           <div className="bg-gray-900/30 rounded-lg border border-gray-800 p-4 h-[600px] overflow-auto">
-            <TaskTree taskExecutions={state.taskExecutions} activeTaskIds={state.activeTaskIds} />
+            <TaskTree state={state} setState={setState}/>
           </div>
         </TabsContent>
 
         <TabsContent value="timeline" className="mt-0">
           <div className="bg-gray-900/30 rounded-lg border border-gray-800 p-4 h-[600px] overflow-auto">
-            <ExecutionTimeline taskExecutions={state.taskExecutions} />
+            <ExecutionTimeline taskExecutions={/*state.taskExecutions*/{}} />
           </div>
         </TabsContent>
 
         <TabsContent value="logs" className="mt-0">
-          <ExecutionLogs logs={state.executionLog} />
+          <ExecutionLogs logs={/*state.executionLog*/[]} />
         </TabsContent>
       </Tabs>
     </div>

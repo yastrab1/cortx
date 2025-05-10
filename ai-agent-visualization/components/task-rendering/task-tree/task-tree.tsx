@@ -5,32 +5,35 @@ import type { TaskTreeProps } from "@/lib/types"
 import { TaskTreeError } from "./task-tree-error"
 import { TaskTreeLoading } from "./task-tree-loading"
 import { TaskTreeRecursive } from "./task-tree-recursive"
+import { TaskID } from "@/lib/types"
 
-export default function TaskTree({ taskExecutions, activeTaskIds }: TaskTreeProps) {
-  if (!taskExecutions || typeof taskExecutions !== "object") {
+export default function TaskTree({ state, setState }: TaskTreeProps) {
+  if (!state.tasks || typeof state.tasks !== "object") {
     return <TaskTreeError message="Invalid task execution data" />
   }
 
-  const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({ root: true })
-
   const toggleExpand = (taskId: string) => {
-    setExpandedTasks((prev) => ({
+    setState(prev => ({
       ...prev,
-      [taskId]: !prev[taskId],
-    }))
+      tasks: {
+        ...prev.tasks,
+        [taskId]: {
+          ...prev.tasks[taskId],
+          expanded: !prev.tasks[taskId].expanded
+        }
+      }
+    }));
   }
 
   try {
-    if (!taskExecutions["root"]) {
+    if (!state.tasks["root"]) {
       return <TaskTreeLoading />
     }
     return (
       <TaskTreeRecursive
-        taskExecutions={taskExecutions}
-        activeTaskIds={activeTaskIds}
-        expandedTasks={expandedTasks}
         toggleExpand={toggleExpand}
         taskId="root"
+        state={state}
       />
     )
   } catch (error) {

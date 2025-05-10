@@ -1,13 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion"
 
-interface ExecutionStep {
-  name: string
-  output: string
-}
-
 interface TaskNodeExecutionProps {
-  executionSteps: ExecutionStep[]
-  status: string
+  executionSteps: string[];
+  status: string;
 }
 
 export function TaskNodeExecution({ executionSteps, status }: TaskNodeExecutionProps) {
@@ -26,8 +21,7 @@ export function TaskNodeExecution({ executionSteps, status }: TaskNodeExecutionP
               transition={{ duration: 0.2 }}
               className="text-xs"
             >
-              <div className="text-purple-300">{step.name}</div>
-              <div className="text-gray-400 ml-2">{step.output}</div>
+              <div className="text-purple-300">{step}</div>
             </motion.div>
           ))}
         </AnimatePresence>

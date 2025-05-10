@@ -26,8 +26,8 @@ export interface ExecutionStep {
 }
 
 export interface TaskTreeProps {
-  taskExecutions: Record<string, TaskExecution>
-  activeTaskIds: string[]
+  state: ExecutionState;
+  setState: (state: (prev: ExecutionState) => ExecutionState) => void;
 }
 
 export interface Task {
@@ -61,4 +61,39 @@ export interface TaskExecutionState {
   executionLog: string[]
   error: string | null
   taskDependencyMap: Record<string, string[]>
+}
+
+export type TaskID = string;
+
+export interface TaskData {
+  id: TaskID;
+  status: TaskStatus;
+
+  name: string;
+  goal: string;
+  dependencies: string[];
+  agentDefinition: string;
+  context: string[];
+  upcomingTasks: string[];
+  model: string;
+  
+  planningSubresults: string[];
+  executionSubresults: string[];
+  planSubtasks: TaskID[];
+  taskResult: TaskResult;
+
+  taskCreationTime: number;
+  taskStartTime: number;
+  taskEndPlanningTime: number;
+  taskEndExecutionTime: number;
+  taskEndTime: number;
+
+  expanded: boolean;
+}
+
+export interface ExecutionState {
+  tasks: Record<TaskID, TaskData>;
+  taskCountByStatus: Record<TaskStatus, number>;
+  errors: string[];
+  executionLog: string[];
 }
