@@ -1,20 +1,21 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useTaskExecution } from "@/hooks/useTaskExecution"
-import { useTaskDependencies } from "@/hooks/useTaskDependencies"
-import { useSpecialTaskHandler } from "@/hooks/useSpecialTaskHandler"
-import { TaskSimulationService } from "@/services/taskSimulationService"
-import { dummyTasks, initialPrompt } from "@/lib/dummy-data"
-import TaskTree from "./task-rendering/task-tree/task-tree"
-import ExecutionTimeline from "./execution-timeline"
-import { ExecutionControls } from "./execution-controls"
-import { ExecutionLogs } from "./execution-logs"
-import { ExecutionState, TaskStatus, TaskData } from "@/lib/types"
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTaskExecution } from "@/hooks/useTaskExecution";
+import { useTaskDependencies } from "@/hooks/useTaskDependencies";
+import { useSpecialTaskHandler } from "@/hooks/useSpecialTaskHandler";
+import { TaskSimulationService } from "@/services/taskSimulationService";
+import { dummyTasks, initialPrompt } from "@/lib/dummy-data";
+import TaskTree from "./task-rendering/task-tree/task-tree";
+import ExecutionTimeline from "./execution-timeline";
+import { ExecutionControls } from "./execution-controls";
+import { ExecutionLogs } from "./execution-logs";
+import { ExecutionState, TaskStatus, TaskData } from "@/lib/types";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function AgentInterface() {
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false);
   /*const [prompt, setPrompt] = useState(initialPrompt)
   
   const {
@@ -91,7 +92,7 @@ export default function AgentInterface() {
     taskEndTime: 0,
 
     expanded: false,
-  }
+  };
   const subtask1: TaskData = {
     id: "subtask1",
     status: "planning",
@@ -102,7 +103,7 @@ export default function AgentInterface() {
     context: [],
     upcomingTasks: [],
     model: "",
-    planningSubresults: [],
+    planningSubresults: ["subtask1_result1", "subtask1_result2"],
     executionSubresults: [],
     planSubtasks: [],
     taskResult: {
@@ -117,42 +118,52 @@ export default function AgentInterface() {
     taskEndTime: 0,
 
     expanded: false,
-  }
-  const execState: ExecutionState = { tasks: { root: rootTask, subtask1: subtask1 }, taskCountByStatus: {} as Record<TaskStatus, number>, errors: [], executionLog: [] };
+  };
+  const execState: ExecutionState = {
+    tasks: { root: rootTask, subtask1: subtask1 },
+    taskCountByStatus: { pending: 1, completed: 1 } as Record<TaskStatus, number>,
+    errors: [],
+    executionLog: [],
+  };
   const [state, setState] = useState<ExecutionState>(execState);
 
   return (
-    <div className="space-y-6">
-      <ExecutionControls
-        isProcessing={/*isProcessing*/false}
-        progress={/*state.progress*/0}
-        onStart={/*startProcess*/() => {}}
-        error={/*state.error*/null}
-      />
+    <Card className="border border-gray-800 bg-gray-900/50 backdrop-blur-sm shadow-lg overflow-hidden">
+      <CardContent className="p-6">
+        <div className="space-y-6">
+          <ExecutionControls
+            isProcessing={/*isProcessing*/ false}
+            onStart={/*startProcess*/ () => {}}
+            state={state}
+          />
 
-      <Tabs defaultValue="tree" className="w-full">
-        <TabsList className="grid grid-cols-3 mb-6 bg-gray-800/50">
-          <TabsTrigger value="tree">Task Tree</TabsTrigger>
-          <TabsTrigger value="timeline">Execution Timeline</TabsTrigger>
-          <TabsTrigger value="logs">Execution Logs</TabsTrigger>
-        </TabsList>
+          <Tabs defaultValue="tree" className="w-full">
+            <TabsList className="grid grid-cols-3 mb-6 bg-gray-800/50">
+              <TabsTrigger value="tree">Task Tree</TabsTrigger>
+              <TabsTrigger value="timeline">Execution Timeline</TabsTrigger>
+              <TabsTrigger value="logs">Execution Logs</TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="tree" className="mt-0">
-          <div className="bg-gray-900/30 rounded-lg border border-gray-800 p-4 h-[600px] overflow-auto">
-            <TaskTree state={state} setState={setState}/>
-          </div>
-        </TabsContent>
+            <TabsContent value="tree" className="mt-0">
+              <div className="bg-gray-900/30 rounded-lg border border-gray-800 p-4 h-[600px] overflow-auto">
+                <TaskTree state={state} setState={setState} />
+              </div>
+            </TabsContent>
 
-        <TabsContent value="timeline" className="mt-0">
-          <div className="bg-gray-900/30 rounded-lg border border-gray-800 p-4 h-[600px] overflow-auto">
-            <ExecutionTimeline taskExecutions={/*state.taskExecutions*/{}} />
-          </div>
-        </TabsContent>
+            <TabsContent value="timeline" className="mt-0">
+              <div className="bg-gray-900/30 rounded-lg border border-gray-800 p-4 h-[600px] overflow-auto">
+                <ExecutionTimeline
+                  taskExecutions={/*state.taskExecutions*/ {}}
+                />
+              </div>
+            </TabsContent>
 
-        <TabsContent value="logs" className="mt-0">
-          <ExecutionLogs logs={/*state.executionLog*/[]} />
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
+            <TabsContent value="logs" className="mt-0">
+              <ExecutionLogs logs={state.executionLog} />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
