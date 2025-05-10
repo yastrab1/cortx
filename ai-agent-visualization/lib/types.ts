@@ -8,7 +8,8 @@ export interface TaskExecution {
   planningSteps: string[]
   executionSteps: ExecutionStep[]
   children: string[]
-  result?: any
+  dependencies?: string[]
+  result?: TaskResult
 }
 
 export type TaskStatus = 
@@ -51,4 +52,13 @@ export interface TaskResult {
   visualPreviews?: string[]
   metrics?: Record<string, number>
   details?: Record<string, string | number>
+}
+
+export interface TaskExecutionState {
+  taskExecutions: Record<string, TaskExecution>
+  activeTaskIds: string[]
+  progress: number
+  executionLog: string[]
+  error: string | null
+  taskDependencyMap: Record<string, string[]>
 }
