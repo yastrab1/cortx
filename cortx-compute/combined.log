@@ -1,0 +1,9 @@
+{"level":"info","message":"Printer Store MCP SSE Server is running on http://localhost:3001/sse","timestamp":"2025-05-09T16:02:04.962Z"}
+{"level":"info","message":"/sse","timestamp":"2025-05-09T16:02:04.965Z"}
+{"level":"info","message":"/messages","timestamp":"2025-05-09T16:02:04.966Z"}
+{"level":"info","message":"Printer Store MCP SSE Server is running on http://localhost:3001/sse","timestamp":"2025-05-09T18:57:21.549Z"}
+{"level":"info","message":"/sse","timestamp":"2025-05-09T18:57:21.555Z"}
+{"level":"info","message":"/messages","timestamp":"2025-05-09T18:57:21.557Z"}
+{"level":"info","message":"[Handler] Process ID: 7728","timestamp":"2025-05-09T18:59:25.573Z"}
+{"level":"info","message":"[callTerminal] Calling sessionManager.getOrCreate for ID: '1'","timestamp":"2025-05-09T18:59:25.574Z"}
+{"address":"//./pipe/docker_engine","code":"ENOENT","errno":-4058,"level":"error","message":"[callTerminal] Error processing command for session 1: connect ENOENT //./pipe/docker_engine","stack":"Error: connect ENOENT //./pipe/docker_engine\n    at __node_internal_captureLargerStackTrace (node:internal/errors:563:5)\n    at __node_internal_exceptionWithHostPort (node:internal/errors:738:12)\n    at PipeConnectWrap.afterConnect [as oncomplete] (node:net:1595:16)","syscall":"connect","timestamp":"2025-05-09T18:59:25.620Z"}
