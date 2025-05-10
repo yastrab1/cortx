@@ -11,3 +11,4 @@ try:
 except KeyboardInterrupt:
     mcp.terminate()
     app.terminate()
+    print("terminated")
