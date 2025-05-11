@@ -101,6 +101,7 @@ server.tool(
     },
     async ({command}, extra: { sessionId?: string; }) => {
         if (!extra.sessionId) return ["No session id provided"]
+        logger.info("Calling terminal with command: "+command)
         const result = await callTerminal("1", command);
         return {
             content: [
