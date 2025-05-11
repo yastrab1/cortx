@@ -18,6 +18,7 @@ import {generatePlan} from "./plannerModel";
 import {execute} from "./engine";
 import cors from "cors";
 import {verbosePlan} from "./logger";
+import planToMermaid from "@/lib/planToMermaid";
 // Load environment variables
 dotenv.config();
 
@@ -33,7 +34,8 @@ export default async function prompt(prompt: string) {
         model: "gemini-2.0-flash"
     })
     verbosePlan(plan)
+
     console.log(await execute(plan))
-    return {response: plan.subtasks.map(task=>task.name).join("\n")}
+    return {response: await planToMermaid(plan)}
 }
 
