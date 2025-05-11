@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTaskExecution } from "@/hooks/useTaskExecution";
 import { useTaskDependencies } from "@/hooks/useTaskDependencies";
@@ -11,8 +11,9 @@ import TaskTree from "./task-rendering/task-tree/task-tree";
 import ExecutionTimeline from "./execution-timeline";
 import { ExecutionControls } from "./execution-controls";
 import { ExecutionLogs } from "./execution-logs";
-import { ExecutionState, TaskStatus, TaskData } from "@/lib/types";
+import { ExecutionState, TaskStatus, TaskData, TaskID } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
+import { fetchStreamedData } from "@/app/hooks/fetchStreamedData";
 
 export default function AgentInterface() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -67,65 +68,17 @@ export default function AgentInterface() {
     }
   }*/
 
-  const rootTask: TaskData = {
-    id: "root",
-    status: "planning",
-    name: "Root Task",
-    goal: "This is the root task",
-    dependencies: [],
-    agentDefinition: "",
-    context: [],
-    upcomingTasks: [],
-    model: "",
-    planningSubresults: [],
-    executionSubresults: [],
-    planSubtasks: ["subtask1"],
-    taskResult: {
-      type: "text",
-      content: "This is the root task",
-    },
-
-    taskCreationTime: 0,
-    taskStartTime: 0,
-    taskEndPlanningTime: 0,
-    taskEndExecutionTime: 0,
-    taskEndTime: 0,
-
-    expanded: false,
-  };
-  const subtask1: TaskData = {
-    id: "subtask1",
-    status: "planning",
-    name: "Subtask 1",
-    goal: "This is the subtask 1",
-    dependencies: ["root"],
-    agentDefinition: "",
-    context: [],
-    upcomingTasks: [],
-    model: "",
-    planningSubresults: ["subtask1_result1", "subtask1_result2"],
-    executionSubresults: [],
-    planSubtasks: [],
-    taskResult: {
-      type: "text",
-      content: "This is the subtask 1",
-    },
-
-    taskCreationTime: 0,
-    taskStartTime: 0,
-    taskEndPlanningTime: 0,
-    taskEndExecutionTime: 0,
-    taskEndTime: 0,
-
-    expanded: false,
-  };
   const execState: ExecutionState = {
-    tasks: { root: rootTask, subtask1: subtask1 },
-    taskCountByStatus: { pending: 1, completed: 1 } as Record<TaskStatus, number>,
+    tasks: { } as Record<TaskID, TaskData>,
+    taskCountByStatus: { pending: 0, planning: 0, executing: 0, waiting_for_children: 0, completed: 0, failed: 0 } as Record<TaskStatus, number>,
     errors: [],
     executionLog: [],
   };
   const [state, setState] = useState<ExecutionState>(execState);
+
+  const onStart = useCallback(() => {
+    fetchStreamedData(initialPrompt, state, setState);
+  }, [state, setState]);
 
   return (
     <Card className="border border-gray-800 bg-gray-900/50 backdrop-blur-sm shadow-lg overflow-hidden">
@@ -133,7 +86,7 @@ export default function AgentInterface() {
         <div className="space-y-6">
           <ExecutionControls
             isProcessing={/*isProcessing*/ false}
-            onStart={/*startProcess*/ () => {}}
+            onStart={onStart}
             state={state}
           />
 

@@ -97,3 +97,32 @@ export interface ExecutionState {
   errors: string[];
   executionLog: string[];
 }
+
+export interface TaskCreatedEvent {
+  eventType: string;
+  timestamp: string;
+  taskData: TaskData;
+}
+
+export interface TaskStatusChangeEvent {
+  eventType: string;
+  timestamp: string;
+  taskId: string;
+  status: TaskStatus;
+}
+
+export interface TaskPlanningSubresults {
+  eventType: string;
+  timestamp: string;
+  taskId: string;
+  subresults: string[];
+}
+
+export interface TaskExecutionSubresults {
+  eventType: string;
+  timestamp: string;
+  taskId: string;
+  subresults: string[];
+}
+
+export type TaskEvent = TaskCreatedEvent | TaskStatusChangeEvent | TaskPlanningSubresults | TaskExecutionSubresults;
