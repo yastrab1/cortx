@@ -1,149 +1,51 @@
-export const initialPrompt =
-  "Research about the latest ai news, write a newsletter, send it to my mailing list of subscribers, and make visuals with it"
+import {TaskExecution} from "@/lib/types";
 
-export const dummyTasks = [
-  {
-    id: "1",
-    name: "News Research Agent",
-    goal: "Research the latest AI news",
-    dependencies: [],
-    agentDefinition: "You are a research agent specialized in finding the latest AI news.",
-    model: "gpt-4o",
-  },
-  {
-    id: "1.1",
-    name: "Keyword Identification Sub-Agent",
-    goal: "Identify relevant keywords for AI news",
-    dependencies: ["1"],
-    agentDefinition: "You identify keywords relevant to AI news research.",
-    model: "gpt-4o",
-  },
-  {
-    id: "1.2",
-    name: "Search Query Formulation Sub-Agent",
-    goal: "Formulate search queries based on keywords",
-    dependencies: ["1.1"],
-    agentDefinition: "You formulate effective search queries based on keywords.",
-    model: "gpt-4o",
-  },
-  {
-    id: "1.3",
-    name: "Search Execution Sub-Agent",
-    goal: "Execute search queries using search tools",
-    dependencies: ["1.2"],
-    agentDefinition: "You execute search queries and retrieve results.",
-    model: "gpt-4o",
-  },
-  {
-    id: "1.4",
-    name: "Content Filtering Sub-Agent",
-    goal: "Filter and select relevant articles",
-    dependencies: ["1.3"],
-    agentDefinition: "You filter search results to find the most relevant articles.",
-    model: "gpt-4o",
-  },
-  {
-    id: "1.5",
-    name: "Summary Generation Sub-Agent",
-    goal: "Summarize key information from articles",
-    dependencies: ["1.4"],
-    agentDefinition: "You summarize key information from selected articles.",
-    model: "gpt-4o",
-  },
-  {
-    id: "2",
-    name: "Newsletter Writing Agent",
-    goal: "Write a newsletter based on research",
-    dependencies: ["1.5"],
-    agentDefinition: "You write engaging newsletters based on research.",
-    model: "gpt-4o",
-  },
-  {
-    id: "2.1",
-    name: "Content Organization Sub-Agent",
-    goal: "Organize news summaries into a coherent structure",
-    dependencies: ["2"],
-    agentDefinition: "You organize content into a coherent newsletter structure.",
-    model: "gpt-4o",
-  },
-  {
-    id: "2.2",
-    name: "Writing Style and Tone Sub-Agent",
-    goal: "Ensure engaging and accessible writing style",
-    dependencies: ["2.1"],
-    agentDefinition: "You ensure the newsletter has an engaging and accessible style.",
-    model: "gpt-4o",
-  },
-  {
-    id: "2.3",
-    name: "Call to Action Sub-Agent",
-    goal: "Add calls to action and links for further reading",
-    dependencies: ["2.2"],
-    agentDefinition: "You add effective calls to action and links to the newsletter.",
-    model: "gpt-4o",
-  },
-  {
-    id: "3",
-    name: "Visuals Creation Agent",
-    goal: "Create visuals for the newsletter",
-    dependencies: ["2.3"],
-    agentDefinition: "You create visuals to accompany the newsletter content.",
-    model: "gpt-4o",
-  },
-  {
-    id: "3.1",
-    name: "Content-Visual Mapping Sub-Agent",
-    goal: "Determine which parts need visuals",
-    dependencies: ["3"],
-    agentDefinition: "You map content to visual needs for the newsletter.",
-    model: "gpt-4o",
-  },
-  {
-    id: "3.2",
-    name: "Visuals Generation/Sourcing Sub-Agent",
-    goal: "Generate or find appropriate visuals",
-    dependencies: ["3.1"],
-    agentDefinition: "You generate or source appropriate visuals for the newsletter.",
-    model: "gpt-4o",
-  },
-  {
-    id: "4",
-    name: "Mailing List Management Agent",
-    goal: "Manage the mailing list",
-    dependencies: ["3.2"],
-    agentDefinition: "You manage the mailing list for newsletter distribution.",
-    model: "gpt-4o",
-  },
-  {
-    id: "4.1",
-    name: "Access Authentication Sub-Agent",
-    goal: "Authenticate access to the user's mailing list",
-    dependencies: ["4"],
-    agentDefinition: "You authenticate access to the mailing list system.",
-    model: "gpt-4o",
-  },
-  {
-    id: "5",
-    name: "Newsletter Sending Agent",
-    goal: "Send the newsletter to subscribers",
-    dependencies: ["4.1"],
-    agentDefinition: "You send the completed newsletter to subscribers.",
-    model: "gpt-4o",
-  },
-  {
-    id: "5.1",
-    name: "Content Integration Sub-Agent",
-    goal: "Combine newsletter text and visuals into final format",
-    dependencies: ["5"],
-    agentDefinition: "You integrate all content into the final newsletter format.",
-    model: "gpt-4o",
-  },
-  {
-    id: "5.2",
-    name: "Sending Protocol Sub-Agent",
-    goal: "Use appropriate protocol to send the newsletter",
-    dependencies: ["5.1"],
-    agentDefinition: "You use the appropriate protocol to send the newsletter.",
-    model: "gpt-4o",
-  },
-]
+const taskExecution: TaskExecution = {
+  id: "task-001",
+  name: "Create AI Newsletter",
+  goal: "Generate a weekly newsletter summarizing the latest developments in AI.",
+  status: "completed",
+  startTime: Date.now() - 1000 * 60 * 45, // 45 minutes ago
+  endTime: Date.now(),
+  planningSteps: [
+    "Identify top AI news sources",
+    "Gather top headlines from the week",
+    "Summarize each news item",
+    "Outline newsletter structure"
+  ],
+  executionSteps: [
+    {
+      name: "Fetch AI news headlines",
+      output: "Retrieved 10 headlines from sources like OpenAI, DeepMind, and MIT Tech Review"
+    },
+    {
+      name: "Summarize news content",
+      output: "Generated concise summaries for each of the 10 news stories"
+    },
+    {
+      name: "Assemble newsletter",
+      output: "Formatted content with title, summaries, and links"
+    },
+    {
+      name: "Finalize and export",
+      output: "Newsletter exported to HTML and Markdown formats"
+    }
+  ],
+  children: [],
+  dependencies: [],
+  result: {
+    type: "newsletter",
+    content: "Weekly AI Digest: OpenAI launches GPT-5 preview, DeepMind announces AlphaFold 3...",
+    visualPreviews: ["https://example.com/preview1.png"],
+    metrics: {
+      headlineCount: 10,
+      wordCount: 450,
+      sourcesUsed: 5
+    },
+    details: {
+      format: "HTML+Markdown",
+      generatedBy: "GPT-4",
+      durationMinutes: 45
+    }
+  }
+};
