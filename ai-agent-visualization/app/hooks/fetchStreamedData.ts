@@ -27,7 +27,8 @@ function processTaskCreatedEvent(event: TaskCreatedEvent, setState: (state: (pre
         tasks: {
             ...prevState.tasks,
             [event.taskData.id]: event.taskData,
-        }
+        },
+        executionLog: [...prevState.executionLog, event.log]
     }));
 }
 
@@ -43,7 +44,8 @@ function processTaskStatusChangeEvent(event: TaskStatusChangeEvent, setState: (s
         tasks: {
             ...prevState.tasks,
             [event.taskId]: { ...prevState.tasks[event.taskId], status: event.status },
-        }
+        },
+        executionLog: [...prevState.executionLog, event.log]
     }));
 }
 
@@ -54,7 +56,8 @@ function processTaskPlanningSubresults(event: TaskPlanningSubresults, setState: 
         tasks: {
             ...prevState.tasks,
             [event.taskId]: { ...prevState.tasks[event.taskId], planningSubresults: [...prevState.tasks[event.taskId].planningSubresults, ...event.subresults] },
-        }
+        },
+        executionLog: [...prevState.executionLog, event.log]
     }));
 }
 
@@ -69,7 +72,8 @@ function processTaskPlanningResults(event: TaskPlanningResults, setState: (state
         tasks: {
             ...prevState.tasks,
             [event.taskId]: { ...prevState.tasks[event.taskId], planSubtasks: event.result },
-        }
+        },
+        executionLog: [...prevState.executionLog, event.log]
     }));
 }
 

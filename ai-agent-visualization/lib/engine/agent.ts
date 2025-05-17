@@ -7,7 +7,7 @@ function findIndependentTasks(id: TaskID): TaskID[] {
 }
 
 export function runAgent(id: TaskID, resultQueue: AsyncQueue<TaskGeneralEvent>, state: ExecutionState) {
-    const plan = generatePlan(id, resultQueue, state);
+    generatePlan(id, resultQueue, state);
     const independentTasks = findIndependentTasks(id);
     for (const task of independentTasks) {
         // executeTask(task, state, resultQueue);
