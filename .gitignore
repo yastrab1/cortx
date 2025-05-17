@@ -1,2 +1,5 @@
 .idea/
 .dependencygraph/
+cortx/package-lock.json
+cortx-compute/package-lock.json
+cortx-browser/package-lock.json

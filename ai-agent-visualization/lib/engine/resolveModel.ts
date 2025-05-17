@@ -1,8 +1,8 @@
-import { LanguageModel } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
-import { perplexity } from "@ai-sdk/perplexity";
+import {LanguageModel} from "ai";
+import {openai} from "@ai-sdk/openai";
+import {anthropic} from "@ai-sdk/anthropic";
+import {google} from "@ai-sdk/google";
+import {perplexity} from "@ai-sdk/perplexity";
 
 export function resolveModel(model: string): LanguageModel {
     const providerPrefixes = {
