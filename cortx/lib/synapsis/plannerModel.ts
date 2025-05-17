@@ -24,7 +24,12 @@ export function taskToString(task: Task): string {
 }
 
 function taskToMessages(task: Task): CoreMessage[] {
-    const systemPrompt = "You are a planner model in a ai agent network. Your task is to create graph of tasks. Each task has a dependency list, that cannot be executed before those task.First, make just a draft. Then refine, until its good enough and add details. !ONLY SPLIT THE TASK PROVIDED IN THE USER INPUT, DO NOT PLAN AHEAD, THATS WHY YOU KNOW YOUR SUCCESSOR! !Incentivize parallelism, use the principle of least dependencies!Each task is in a format. If the task is not worth splitting, just output one and it will automatically execute:\n" +
+    const systemPrompt = "You are a planner model in a ai agent network. Your task is to create graph of tasks. " +
+        "Each task has a dependency list, that cannot be executed before those task." +
+        "First, make just a draft. Then refine, until its good enough and add details. " +
+        "!ONLY SPLIT THE TASK PROVIDED IN THE USER INPUT, DO NOT PLAN AHEAD, THATS WHY YOU KNOW YOUR SUCCESSOR! " +
+        "!Incentivize parallelism, use the principle of least dependencies!" +
+        "Each task is in a format. If the task is not worth splitting, just output one and it will automatically execute:\n" +
         "NAME:\n" +
         "GOAL: (the high level goal of that task)\n" +
         "Agent definition: (The system prompt of the agent, eg \"You are a master in writing newsletters, keep them concise\")\n" +

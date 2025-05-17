@@ -63,7 +63,7 @@ class MCPRegistry {
 
 export function resolveModel(model: string): LanguageModel {
     const providerPrefixes = {
-        "openai": ["gpt"],
+        "openai": ["gpt","o"],
         "google": ["gemini"],
         "anthropic": ["claude"],
     };
@@ -100,7 +100,7 @@ async function executeTask(task: Task, context: CoreMessage[]) {
 
     console.log(messages)
     const registry = await MCPRegistry.getInstance();
-    console.log("running task with model",task.model)
+    console.log("running task with model", task.model)
     const response = await generateText({
         model: resolveModel(task.model),
         messages: messages,

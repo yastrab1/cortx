@@ -10,6 +10,7 @@ import * as readline from "node:readline";
 import dotenv from 'dotenv';
 dotenv.config();
 import winston from 'winston';
+import {write} from "node:fs";
 
 const logger = winston.createLogger({
     level: 'info',
@@ -112,15 +113,40 @@ server.tool(
     }
 )
 
+async function writeFile(sessionId:string, path: string, content: string) {
+    if (!sessionId) return ["No session id provided"]
+    console.log("Calling command +"`echo "${JSON.stringify(content).slice(1, -1)}" > ${path}`)
+
+    const result = await callTerminal("1", `echo "${JSON.stringify(content).slice(1, -1)}" > ${path}`);
+    return {
+        content: [
+            {
+                type: "text",
+                text: result
+            }
+        ]
+    };
+}
+
+server.tool(
+    "writeFile",
+    {
+        path: z.string(),
+        content: z.string()
+    },
+    async ({path, content}, extra: { sessionId?: string; }) => {
+        return await writeFile("1", path, content);
+    }
+)
+
 // server.tool(
-//     "writeFile",
+//     "readFile",
 //     {
 //         path: z.string(),
-//         content: z.string()
 //     },
-//     async ({path, content}, extra: { sessionId?: string; }) => {
+//     async ({path}, extra: { sessionId?: string; }) => {
 //         if (!extra.sessionId) return ["No session id provided"]
-//         const result = await callTerminal("1", `cat << EOF > ${path} \n  ${content}`);
+//         const result = await callTerminal("1", `cat ${path}`);
 //         return {
 //             content: [
 //                 {
@@ -131,25 +157,6 @@ server.tool(
 //         };
 //     }
 // )
-
-server.tool(
-    "readFile",
-    {
-        path: z.string(),
-    },
-    async ({path}, extra: { sessionId?: string; }) => {
-        if (!extra.sessionId) return ["No session id provided"]
-        const result = await callTerminal("1", `cat ${path}`);
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: result
-                }
-            ]
-        };
-    }
-)
 
 async function main() {
     let transport: SSEServerTransport;
@@ -178,7 +185,7 @@ async function dev() {
         });
 
         const questionPromise = new Promise(resulve => rl.question("Prompt:", async function (command) {
-            const result = await callTerminal("1",command);
+            const result = await writeFile("1","test.py",command);
             logger.info("Returned:"+result);
             rl.close();
             resulve(result);

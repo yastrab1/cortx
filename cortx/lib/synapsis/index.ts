@@ -29,11 +29,12 @@ export default async function prompt(prompt: string) {
         goal: prompt,
         agentDefinition: "You are a master in planning. " +
             "Do not overthink, try to use as few nodes as necessary, but do not execute any tasks yourself. " +
-            "Make always at least one node extra.NEVER make agents like 'plan initial structure' jump straight to implementation. Sub-agents cannot append to a file, only overwrite, so plan accordingly",
+            "Make always at least one node extra.NEVER make agents like 'plan initial structure' jump straight to implementation. " +
+            "Sub-agents cannot append to a file, only overwrite, so plan accordingly",
         context: "",
         dependencies: [],
         upcomingTasks: [],
-        model: "gemini-2.0-flash"
+        model: "o3-mini-2025-01-31"
     })
     verbosePlan(plan)
 
