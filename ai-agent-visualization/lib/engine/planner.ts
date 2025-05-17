@@ -116,7 +116,7 @@ export function postprocessResponse(plans: RawPlan): TaskData[] {
     return planDictionaryToArray(planDictionary);
 }
 
-export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue<TaskGeneralEvent>, state: ExecutionState): Promise<void> {
+export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue, state: ExecutionState): Promise<boolean> {
     const task = state.tasks[taskID];
     if (!task) {
         throw new Error(`Task ${taskID} not found in state`);
@@ -130,7 +130,7 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue<TaskG
         status: "planning",
         log: `[${getTime()}] Started planning task ${taskID}`
     };
-    resultQueue.enqueue(startedPlanningEvent);
+    resultQueue.enqueue(startedPlanningEvent,state);
 
     const promptMessages = taskToMessages(task);
     // TODO: implement correct logging with events: console.log("Generating plan with ", promptMessages.map(message => message.content).join("\n"));
@@ -155,7 +155,7 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue<TaskG
         subresults: plan.map(task => task.name),
         log: `[${getTime()}] Generated plan for task ${taskID}`
     };
-    resultQueue.enqueue(planningSubresultsEvent);
+    resultQueue.enqueue(planningSubresultsEvent,state);
 
     for (const task of plan) {
         const taskCreatedEvent: TaskCreatedEvent = {
@@ -165,7 +165,7 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue<TaskG
             taskData: task,
             log: `[${getTime()}] Created task ${task.id}`
         };
-        resultQueue.enqueue(taskCreatedEvent);
+        resultQueue.enqueue(taskCreatedEvent,state);
     }
 
     const planningResultsEvent: TaskPlanningResults = {
@@ -175,7 +175,7 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue<TaskG
         result: plan.map(task => task.id),
         log: `[${getTime()}] Generated plan for task ${taskID}`
     };
-    resultQueue.enqueue(planningResultsEvent);
+    resultQueue.enqueue(planningResultsEvent,state);
 
     const finishedTaskEvent: TaskStatusChangeEvent = {
         eventType: "task_status_change",
@@ -184,5 +184,7 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue<TaskG
         status: "executing",
         log: `[${getTime()}] Finished task ${taskID}`
     };
-    resultQueue.enqueue(finishedTaskEvent);
+    resultQueue.enqueue(finishedTaskEvent,state);
+
+    return rawPlan.benefitFromSplitting;
 }

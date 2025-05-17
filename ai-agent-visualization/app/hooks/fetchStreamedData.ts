@@ -25,10 +25,10 @@ function processTaskCreatedEvent(event: TaskCreatedEvent, setState: (state: (pre
     setState(prevState => ({
         ...prevState,
         tasks: {
-            ...prevState.tasks,
+            ...prevState?.tasks,
             [event.taskData.id]: event.taskData,
         },
-        executionLog: [...prevState.executionLog, event.log]
+        executionLog: [...prevState?.executionLog, event.log]
     }));
 }
 
@@ -37,15 +37,15 @@ function processTaskStatusChangeEvent(event: TaskStatusChangeEvent, setState: (s
     setState(prevState => ({
         ...prevState,
         taskCountByStatus: {
-            ...prevState.taskCountByStatus,
-            [prevState.tasks[event.taskId].status]: prevState.taskCountByStatus[prevState.tasks[event.taskId].status] - 1,
-            [event.status]: prevState.taskCountByStatus[event.status] + 1
+            ...prevState?.taskCountByStatus,
+            [prevState?.tasks[event.taskId].status]: prevState?.taskCountByStatus[prevState?.tasks[event.taskId].status] - 1,
+            [event.status]: prevState?.taskCountByStatus[event.status] + 1
         },
         tasks: {
-            ...prevState.tasks,
-            [event.taskId]: { ...prevState.tasks[event.taskId], status: event.status },
+            ...prevState?.tasks,
+            [event.taskId]: { ...prevState?.tasks[event.taskId], status: event.status },
         },
-        executionLog: [...prevState.executionLog, event.log]
+        executionLog: [...prevState?.executionLog, event.log]
     }));
 }
 
@@ -54,10 +54,10 @@ function processTaskPlanningSubresults(event: TaskPlanningSubresults, setState: 
     setState(prevState => ({
         ...prevState,
         tasks: {
-            ...prevState.tasks,
-            [event.taskId]: { ...prevState.tasks[event.taskId], planningSubresults: [...prevState.tasks[event.taskId].planningSubresults, ...event.subresults] },
+            ...prevState?.tasks,
+            [event.taskId]: { ...prevState?.tasks[event.taskId], planningSubresults: [...prevState?.tasks[event.taskId].planningSubresults, ...event.subresults] },
         },
-        executionLog: [...prevState.executionLog, event.log]
+        executionLog: [...prevState?.executionLog, event.log]
     }));
 }
 
@@ -70,17 +70,17 @@ function processTaskPlanningResults(event: TaskPlanningResults, setState: (state
     setState(prevState => ({
         ...prevState,
         tasks: {
-            ...prevState.tasks,
-            [event.taskId]: { ...prevState.tasks[event.taskId], planSubtasks: event.result },
+            ...prevState?.tasks,
+            [event.taskId]: { ...prevState?.tasks[event.taskId], planSubtasks: event.result },
         },
-        executionLog: [...prevState.executionLog, event.log]
+        executionLog: [...prevState?.executionLog, event.log]
     }));
 }
 
 export async function fetchStreamedData(prompt: string, setState: (state: (prev: ExecutionState) => ExecutionState) => void) {
     setState(prevState => ({
         ...prevState,
-        executionLog: [...prevState.executionLog, "Starting agent process..."]//{ timestamp: new Date().toISOString(), message: "Starting agent process..." }]
+        executionLog: [...prevState?.executionLog, "Starting agent process..."]//{ timestamp: new Date().toISOString(), message: "Starting agent process..." }]
     }));
 
     const response = await fetch('/api/ai-agent', {
