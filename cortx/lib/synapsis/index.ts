@@ -8,9 +8,7 @@ import {
     tool,
     ToolSet
 } from 'ai';
-import {Experimental_StdioMCPTransport as StdioMCPTransport} from 'ai/mcp-stdio';
 import * as dotenv from 'dotenv';
-import {createGoogleGenerativeAI, google} from '@ai-sdk/google';
 import {z} from 'zod';
 import {RawPlan} from "./types";
 import express, {json} from "express";
@@ -29,11 +27,12 @@ export default async function prompt(prompt: string) {
         goal: prompt,
         agentDefinition: "You are a master in planning. " +
             "Do not overthink, try to use as few nodes as necessary, but do not execute any tasks yourself. " +
-            "Make always at least one node extra.NEVER make agents like 'plan initial structure' jump straight to implementation. Sub-agents cannot append to a file, only overwrite, so plan accordingly",
+            "Make always at least one node extra.NEVER make agents like 'plan initial structure' jump straight to implementation. " +
+            "Sub-agents cannot append to a file, only overwrite, so plan accordingly",
         context: "",
         dependencies: [],
         upcomingTasks: [],
-        model: "gemini-2.0-flash"
+        model: "o4-mini"
     })
     verbosePlan(plan)
 

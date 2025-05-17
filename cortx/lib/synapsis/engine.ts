@@ -19,7 +19,7 @@ dotenv.config();
 
 const systemPrompt = " TRY YOUR ABSOLUTE HARDEST," +
     " IF YOU DONT KNOW JUST THINK OF SOMETHING CLOSE ENOUGH. NEVER ASK OR HANG." +
-    "Write into files using echo [your file] > file.Write always the whole file, not by lines!!!. The OS is alpine with python"
+    "Write into files using your writeFile tool.The OS is alpine with python"
 
 const mcpURLRegistry: string[] = [" http://localhost:3001/sse"]
 
@@ -63,7 +63,7 @@ class MCPRegistry {
 
 export function resolveModel(model: string): LanguageModel {
     const providerPrefixes = {
-        "openai": ["gpt"],
+        "openai": ["gpt", "o"],
         "google": ["gemini"],
         "anthropic": ["claude"],
     };
@@ -100,7 +100,7 @@ async function executeTask(task: Task, context: CoreMessage[]) {
 
     console.log(messages)
     const registry = await MCPRegistry.getInstance();
-    console.log("running task with model",task.model)
+    console.log("running task with model", task.model)
     const response = await generateText({
         model: resolveModel(task.model),
         messages: messages,
@@ -122,7 +122,6 @@ async function executeTask(task: Task, context: CoreMessage[]) {
                 content: JSON.stringify(tool)
             })
         }
-        // await executeTask(task, continuationMessages)
     }
 
     return response.text;
@@ -130,7 +129,6 @@ async function executeTask(task: Task, context: CoreMessage[]) {
 
 export function findFreeNodes(plan: Plan) {
     const layer: ExecutionLayer = {tasks: []}
-
 
     for (const task of plan.subtasks) {
         if (task.dependencies.length === 0) {
@@ -153,11 +151,19 @@ export async function execute(plan: Plan) {
     const planCopy = structuredClone(plan);
     let nodes = findFreeNodes(planCopy)
     const outputs: { [taskName: string]: CoreMessage } = {};
+
+    function formatDependencyAsContext(dependency: Task) {
+        return `The dependency ${dependency.name} with goal ${dependency.goal} outputted` + outputs[dependency.name];
+    }
+
     while (nodes.tasks.length > 0) {
         for (const task of nodes.tasks) {
-            const context = []
+            const context: CoreMessage[] = []
             for (const dependency of task.dependencies) {
-                context.push(outputs[dependency.name])
+                context.push({
+                    role: "user",
+                    content: formatDependencyAsContext(dependency)
+                } as CoreMessage)
             }
             const result = await executeTask(task, context)
             outputs[task.name] = {role: "user", content: result}
