@@ -1,12 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useTaskExecution } from "@/hooks/useTaskExecution";
-import { useTaskDependencies } from "@/hooks/useTaskDependencies";
-import { useSpecialTaskHandler } from "@/hooks/useSpecialTaskHandler";
-import { TaskSimulationService } from "@/services/taskSimulationService";
-import { dummyTasks, initialPrompt } from "@/lib/dummy-data";
+import { initialPrompt } from "@/lib/dummy-data";
 import TaskTree from "./task-rendering/task-tree/task-tree";
 import ExecutionTimeline from "./execution-timeline";
 import { ExecutionControls } from "./execution-controls";
@@ -17,56 +13,6 @@ import { fetchStreamedData } from "@/app/hooks/fetchStreamedData";
 
 export default function AgentInterface() {
   const [isProcessing, setIsProcessing] = useState(false);
-  /*const [prompt, setPrompt] = useState(initialPrompt)
-  
-  const {
-    state,
-    setState,
-    addLogEntry,
-    handleError,
-    updateProgress,
-    getParentTaskId,
-    checkAndCompleteParentTask,
-    checkDependentTasks,
-    planningIterationsRef
-  } = useTaskExecution()
-
-  // Initialize task simulation service
-  const taskSimulation = new TaskSimulationService(
-    addLogEntry,
-    handleError,
-    setState,
-    getParentTaskId,
-    checkAndCompleteParentTask,
-    checkDependentTasks,
-    updateProgress,
-    planningIterationsRef
-  )
-
-  // Use hooks for dependency management and special task handling
-  useTaskDependencies(isProcessing, dummyTasks, setState, addLogEntry)
-  useSpecialTaskHandler(isProcessing, state, taskSimulation.simulateTaskPlanning.bind(taskSimulation), addLogEntry)
-
-  const startProcess = () => {
-    try {
-      setIsProcessing(true)
-      setState({
-        taskExecutions: {},
-        activeTaskIds: [],
-        progress: 0,
-        executionLog: [],
-        error: null,
-        taskDependencyMap: {}
-      })
-      planningIterationsRef.current = {} // Reset planning iterations counter
-
-      // Start with the main planning task
-      addLogEntry("Starting execution of prompt: " + prompt)
-      taskSimulation.simulateMainPlanning(prompt)
-    } catch (err) {
-      handleError("Error starting process", err)
-    }
-  }*/
 
   const execState: ExecutionState = {
     tasks: { } as Record<TaskID, TaskData>,
@@ -76,8 +22,13 @@ export default function AgentInterface() {
   };
   const [state, setState] = useState<ExecutionState>(execState);
 
+  useEffect(() => {
+    console.log("state", state);
+  }, [state]);
+
   const onStart = useCallback(() => {
-    fetchStreamedData(initialPrompt, state, setState);
+    setIsProcessing(true);
+    fetchStreamedData(initialPrompt, setState);
   }, [state, setState]);
 
   return (
@@ -85,7 +36,7 @@ export default function AgentInterface() {
       <CardContent className="p-6">
         <div className="space-y-6">
           <ExecutionControls
-            isProcessing={/*isProcessing*/ false}
+            isProcessing={isProcessing}
             onStart={onStart}
             state={state}
           />

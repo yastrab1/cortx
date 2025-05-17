@@ -1,10 +1,11 @@
 import { CoreMessage, generateObject } from "ai";
 import { z } from "zod";
-import { TaskData, TaskID, TaskStatus, TaskGeneralEvent, TaskStatusChangeEvent, ExecutionState, RawTask, RawPlan, TaskEvent, TaskCreatedEvent, TaskPlanningSubresults, TaskExecutionSubresults } from "../types";
+import { TaskData, TaskID, TaskStatus, TaskGeneralEvent, TaskStatusChangeEvent, ExecutionState, RawTask, RawPlan, TaskEvent, TaskCreatedEvent, TaskPlanningSubresults, TaskPlanningResults, TaskExecutionSubresults } from "../types";
 import { AsyncQueue } from "./asyncQueue";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { resolveModel } from "./resolveModel";
+import { plannerSystemPrompt } from "./prompts";
 
 const plannerOutputSchema = z.object({
     analysis: z.string(),
@@ -19,8 +20,6 @@ const plannerOutputSchema = z.object({
     benefitFromSplitting: z.boolean(),
 });
 
-const systemPrompt = readFileSync(join(__dirname, "plannerSystemPrompt.txt"), "utf-8");
-
 export function taskToString(task: TaskData): string {
     return `Task Name: ${task.name}\n` +
         `Goal: ${task.goal}\n` +
@@ -33,7 +32,7 @@ export function taskToString(task: TaskData): string {
 function taskToMessages(task: TaskData): CoreMessage[] {
     const userPrompt = taskToString(task);
 
-    const systemMessage: CoreMessage = { role: "system", content: systemPrompt };
+    const systemMessage: CoreMessage = { role: "system", content: plannerSystemPrompt };
     const userMessage: CoreMessage = { role: "user", content: userPrompt };
 
     return [systemMessage, userMessage];
@@ -114,7 +113,7 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue<TaskG
 
     // Started planning event
     const startedPlanningEvent: TaskStatusChangeEvent = {
-        eventType: "TaskStatusChange",
+        eventType: "task_status_change",
         timestamp: Date.now().toString(),
         taskId: taskID,
         status: "planning",
@@ -139,7 +138,7 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue<TaskG
     const plan = postprocessResponse(rawPlan);
 
     const planningSubresultsEvent: TaskPlanningSubresults = {
-        eventType: "TaskPlanningSubresults",
+        eventType: "task_planning_subresults",
         timestamp: Date.now().toString(),
         taskId: taskID,
         subresults: plan.map(task => task.name),
@@ -149,7 +148,7 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue<TaskG
 
     for (const task of plan) {
         const taskCreatedEvent: TaskCreatedEvent = {
-            eventType: "TaskCreated",
+            eventType: "task_created",
             timestamp: Date.now().toString(),
             taskId: task.id,
             taskData: task,
@@ -158,11 +157,20 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue<TaskG
         resultQueue.enqueue(taskCreatedEvent);
     }
 
-    const finishedTaskEvent: TaskStatusChangeEvent = {
-        eventType: "TaskStatusChange",
+    const planningResultsEvent: TaskPlanningResults = {
+        eventType: "task_planning_results",
         timestamp: Date.now().toString(),
         taskId: taskID,
-        status: "completed",
+        result: plan.map(task => task.id),
+        log: `[${Date.now().toString()}] Generated plan for task ${taskID}`
+    };
+    resultQueue.enqueue(planningResultsEvent);
+
+    const finishedTaskEvent: TaskStatusChangeEvent = {
+        eventType: "task_status_change",
+        timestamp: Date.now().toString(),
+        taskId: taskID,
+        status: "executing",
         log: `[${Date.now().toString()}] Finished task ${taskID}`
     };
     resultQueue.enqueue(finishedTaskEvent);

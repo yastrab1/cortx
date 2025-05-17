@@ -18,7 +18,9 @@ export class AsyncQueue<T> {
  
     async dequeue(): Promise<T[]> {
         if (this.queue.length > 0) {
-            return this.queue.reverse();
+            const data = this.queue;
+            this.queue = [];
+            return data;
         }
 
         return new Promise<T[]>((resolve) => {

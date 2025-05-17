@@ -1,4 +1,4 @@
-import { ExecutionState, TaskEvent, TaskCreatedEvent, TaskStatusChangeEvent, TaskPlanningSubresults, TaskExecutionSubresults } from "@/lib/types";
+import { ExecutionState, TaskEvent, TaskCreatedEvent, TaskStatusChangeEvent, TaskPlanningSubresults, TaskExecutionSubresults, TaskPlanningResults } from "@/lib/types";
 
 export function processEvent(event: TaskEvent, setState: (state: (prev: ExecutionState) => ExecutionState) => void) {
     switch (event.eventType) {
@@ -13,6 +13,9 @@ export function processEvent(event: TaskEvent, setState: (state: (prev: Executio
             break;
         case "task_execution_subresults":
             processTaskExecutionSubresults(event as TaskExecutionSubresults);
+            break;
+        case "task_planning_results":
+            processTaskPlanningResults(event as TaskPlanningResults, setState);
             break;
     }
 }
@@ -59,7 +62,18 @@ function processTaskExecutionSubresults(event: TaskExecutionSubresults) {
     console.log("task_execution_subresults: ", event);
 }
 
-export async function fetchStreamedData(params: string, state: ExecutionState, setState: (state: (prev: ExecutionState) => ExecutionState) => void) {
+function processTaskPlanningResults(event: TaskPlanningResults, setState: (state: (prev: ExecutionState) => ExecutionState) => void) {
+    console.log("task_planning_results: ", event);
+    setState(prevState => ({
+        ...prevState,
+        tasks: {
+            ...prevState.tasks,
+            [event.taskId]: { ...prevState.tasks[event.taskId], planSubtasks: event.result },
+        }
+    }));
+}
+
+export async function fetchStreamedData(prompt: string, setState: (state: (prev: ExecutionState) => ExecutionState) => void) {
     setState(prevState => ({
         ...prevState,
         executionLog: [...prevState.executionLog, "Starting agent process..."]//{ timestamp: new Date().toISOString(), message: "Starting agent process..." }]
@@ -70,11 +84,11 @@ export async function fetchStreamedData(params: string, state: ExecutionState, s
         headers: {
             'Content-Type': 'application/json',
         },
-        // If you need to send a prompt, include it in the body:
-        // body: JSON.stringify({ prompt: "Your user prompt here" }),
+        body: JSON.stringify({ prompt: prompt }),
     });
 
     if (!response.ok || !response.body) {
+        console.error("HTTP error! status: ", response.status);
         throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -98,6 +112,7 @@ export async function fetchStreamedData(params: string, state: ExecutionState, s
                 continue;
             }
 
+            console.log("event", event);
             const eventObject = JSON.parse(event) as TaskEvent;
             processEvent(eventObject, setState);
         }

@@ -20,7 +20,14 @@ export type TaskStatus =
   | 'executing'
   | 'waiting_for_children'
   | 'completed'
-  | 'failed'
+  | 'failed';
+
+export type TaskEventType =
+  | 'task_created'
+  | 'task_status_change'
+  | 'task_planning_subresults'
+  | 'task_execution_subresults'
+  | 'task_planning_results';
 
 export interface ExecutionStep {
   name: string
@@ -94,7 +101,7 @@ export interface TaskData {
 }
 
 export interface TaskGeneralEvent {
-  eventType: string;
+  eventType: TaskEventType;
   timestamp: string;
   taskId: TaskID;
   log: string;
@@ -123,7 +130,11 @@ export interface TaskExecutionSubresults extends TaskGeneralEvent {
   subresults: string[];
 }
 
-export type TaskEvent = TaskCreatedEvent | TaskStatusChangeEvent | TaskPlanningSubresults | TaskExecutionSubresults | TaskGeneralEvent;
+export interface TaskPlanningResults extends TaskGeneralEvent {
+  result: TaskID[];
+}
+
+export type TaskEvent = TaskCreatedEvent | TaskStatusChangeEvent | TaskPlanningSubresults | TaskExecutionSubresults | TaskGeneralEvent | TaskPlanningResults;
 
 export interface RawTask {
   name: string;

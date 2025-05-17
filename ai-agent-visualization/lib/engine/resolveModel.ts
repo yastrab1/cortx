@@ -6,7 +6,7 @@ import { perplexity } from "@ai-sdk/perplexity";
 
 export function resolveModel(model: string): LanguageModel {
     const providerPrefixes = {
-        "openai": ["gpt"],
+        "openai": ["gpt", "o"],
         "google": ["gemini"],
         "anthropic": ["claude"],
     };

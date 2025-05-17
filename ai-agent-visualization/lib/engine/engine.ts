@@ -1,5 +1,5 @@
 import { AsyncQueue } from "./asyncQueue";
-import { TaskGeneralEvent, TaskStatusChangeEvent, ExecutionState, TaskData, TaskID, TaskStatus } from "@/lib/types"
+import { TaskGeneralEvent, TaskStatusChangeEvent, ExecutionState, TaskData, TaskID, TaskStatus, TaskCreatedEvent } from "@/lib/types"
 import { runAgent } from "./agent";
 import { processEvent } from "@/app/hooks/fetchStreamedData";
 import { resolveModel } from "./resolveModel";
@@ -13,8 +13,8 @@ function emptyState(): ExecutionState {
     }
 }
 
-function createRootTask(prompt: string): TaskData {
-    return {
+function createRootTask(prompt: string, resultQueue: AsyncQueue<TaskGeneralEvent>): TaskData {
+    const rootTask: TaskData = {
         id: "root",
         status: "pending",
         name: "Root Task",
@@ -23,7 +23,7 @@ function createRootTask(prompt: string): TaskData {
         agentDefinition: "root",
         context: [],
         upcomingTasks: [],
-        model: resolveModel("gpt-o4-mini"),
+        model: resolveModel("o4-mini"),
         planningSubresults: [],
         executionSubresults: [],
         planSubtasks: [],
@@ -39,10 +39,19 @@ function createRootTask(prompt: string): TaskData {
         taskEndTime: 0,
         expanded: true
     }
+    const rootTaskCreatedEvent: TaskCreatedEvent = {
+        eventType: "task_created",
+        timestamp: Date.now().toString(),
+        taskId: rootTask.id,
+        taskData: rootTask,
+        log: `[${Date.now().toString()}] Created root task ${rootTask.id}`
+    }
+    resultQueue.enqueue(rootTaskCreatedEvent);
+    return rootTask;
 }
 
 function isEndEvent(event: TaskGeneralEvent) {
-    if (event.taskId !== "root" || event.eventType !== "TaskSatusChange") {
+    if (event.taskId !== "root" || event.eventType !== "task_status_change") {
         return false;
     }
     const statusEvent = event as TaskStatusChangeEvent;
@@ -52,7 +61,8 @@ function isEndEvent(event: TaskGeneralEvent) {
 export async function* runEngine(prompt: string) {
     let state: ExecutionState = emptyState();
     const resultQueue = new AsyncQueue<TaskGeneralEvent>();
-    runAgent(prompt, resultQueue, state);
+    state.tasks["root"] = createRootTask(prompt, resultQueue);
+    runAgent("root", resultQueue, state);
 
     let finishedExecution = false;
     while (!finishedExecution) {

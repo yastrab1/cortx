@@ -1,20 +1,18 @@
-// app/api/agent/route.js
 import { NextResponse } from 'next/server';
 import { runEngine } from '@/lib/engine/engine';
 
-export async function POST(req) {
-    // In a real app, you would parse the request body to get the user's prompt
-    // const { prompt } = await req.json();
+export async function POST(req: Request) {
+    const { prompt } = await req.json();
 
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
 
-    const agentEvents = runEngine("test prmopt");
+    const agentEvents = runEngine(prompt);
 
     const writeEvents = async () => {
         for await (const event of agentEvents) {
-            const eventString = JSON.stringify(event) + '\n';
+            const eventString = JSON.stringify(event) + '\n'; // TODO: change splitter cause it can be a problem when the data has \n in it
             await writer.write(encoder.encode(eventString));
         }
         writer.close();
