@@ -7,7 +7,8 @@ import {randomUUID} from "node:crypto";
 import {Duplex} from "node:stream"
 import {sessionManager} from "./SessionManager";
 import * as readline from "node:readline";
-
+import dotenv from 'dotenv';
+dotenv.config();
 import winston from 'winston';
 
 const logger = winston.createLogger({
@@ -34,11 +35,13 @@ const server = new McpServer({
 });
 
 const app = express();
-const docker = new Docker();
+console.log("Using docekr at ",process.env.DOCKER_HOST || '/var/run/docker.sock')
+const docker = new Docker({
+    socketPath: process.env.DOCKER_HOST || '/var/run/docker.sock'
+});
 
 
 async function callTerminal(sessionId: string, command: string): Promise<string> {
-    logger.info(`[Handler] Process ID: ${process.pid}`);
     if (!sessionId) { // Should not happen if called with "1"
         return "No session ID provided";
     }
@@ -47,17 +50,12 @@ async function callTerminal(sessionId: string, command: string): Promise<string>
     command = `${command}; echo "${marker}"`;
 
     try {
-        // Use the new atomic method
-        logger.info(`[callTerminal] Calling sessionManager.getOrCreate for ID: '${sessionId}'`);
         const {container, stream} = await sessionManager.getOrCreate(sessionId);
-        logger.info(`[callTerminal] Got container/stream for ID: '${sessionId}'`);
-
         let outputBuffer = "";
         const outputCollector = new Promise<string>((resolve, reject) => {
             const dataListener = (chunk: Buffer) => {
                 const text = chunk.toString();
                 outputBuffer += text;
-                logger.info(`[callTerminal] Got data for session ${sessionId}:`, text);
                 if (outputBuffer.includes(marker)) {
                     stream.removeListener('data', dataListener);
                     stream.removeListener('error', errorListener);
@@ -81,8 +79,6 @@ async function callTerminal(sessionId: string, command: string): Promise<string>
 
             // Send command
             stream.write("\n" + command + "\n");
-            logger.info(stream.listeners('error').length);
-            logger.info(stream.listeners('end').length);
         });
 
         return await outputCollector;
@@ -101,7 +97,9 @@ server.tool(
     },
     async ({command}, extra: { sessionId?: string; }) => {
         if (!extra.sessionId) return ["No session id provided"]
-        logger.info("Calling terminal with command: "+command)
+        logger.log({
+            level:'info',
+            message:"Calling terminal with command: "+command})
         const result = await callTerminal("1", command);
         return {
             content: [
@@ -114,25 +112,25 @@ server.tool(
     }
 )
 
-server.tool(
-    "writeFile",
-    {
-        path: z.string(),
-        content: z.string()
-    },
-    async ({path, content}, extra: { sessionId?: string; }) => {
-        if (!extra.sessionId) return ["No session id provided"]
-        const result = await callTerminal("1", `cat << EOF > ${path} \n  ${content}`);
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: result
-                }
-            ]
-        };
-    }
-)
+// server.tool(
+//     "writeFile",
+//     {
+//         path: z.string(),
+//         content: z.string()
+//     },
+//     async ({path, content}, extra: { sessionId?: string; }) => {
+//         if (!extra.sessionId) return ["No session id provided"]
+//         const result = await callTerminal("1", `cat << EOF > ${path} \n  ${content}`);
+//         return {
+//             content: [
+//                 {
+//                     type: "text",
+//                     text: result
+//                 }
+//             ]
+//         };
+//     }
+// )
 
 server.tool(
     "readFile",

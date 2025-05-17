@@ -19,7 +19,7 @@ dotenv.config();
 
 const systemPrompt = " TRY YOUR ABSOLUTE HARDEST," +
     " IF YOU DONT KNOW JUST THINK OF SOMETHING CLOSE ENOUGH. NEVER ASK OR HANG." +
-    "Use your terminal tool if necessary, write into files using echo. The OS is alpine with python"
+    "Write into files using echo [your file] > file.Write always the whole file, not by lines!!!. The OS is alpine with python"
 
 const mcpURLRegistry: string[] = [" http://localhost:3001/sse"]
 

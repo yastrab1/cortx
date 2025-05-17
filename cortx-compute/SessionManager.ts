@@ -16,30 +16,22 @@ export class SessionManager {
     private sessions: { [sessionId: string]: SessionData } = {};
 
     async getOrCreate(sessionId: string): Promise<SessionData> {
-        console.log(`-----> [SessionManager] getOrCreate called for key: '${sessionId}'`);
 
         if (this.sessions[sessionId]) {
-            console.log(`       [SessionManager] Session '${sessionId}' already exists. Returning.`);
             return this.sessions[sessionId];
         }
 
         if (creationPromises.has(sessionId)) {
-            console.log(`       [SessionManager] Session '${sessionId}' creation in progress. Awaiting existing promise.`);
             return creationPromises.get(sessionId)!; // Wait for the ongoing creation
         }
-
-        console.log(`       [SessionManager] Session '${sessionId}' not found and not creating. Starting new creation.`);
         const creationPromise = this.createSessionInternal(sessionId);
 
         creationPromises.set(sessionId, creationPromise);
-        console.log(`       [SessionManager] Creation promise stored for '${sessionId}'.`);
 
         try {
             const sessionData = await creationPromise;
-            console.log(`       [SessionManager] Creation COMPLETE for '${sessionId}'.`);
             return sessionData;
         } finally {
-            console.log(`       [SessionManager] Removing creation promise for '${sessionId}'.`);
             creationPromises.delete(sessionId);
         }
     }
@@ -55,14 +47,12 @@ export class SessionManager {
                 HostConfig: { AutoRemove: true } // Good practice
             });
             await container.start();
-            console.log(`       [SessionManager - createInternal] Attaching stream for '${sessionId}'`);
             const stream = await container.attach({
                 stream: true, stdin: true, stdout: true, stderr: true, hijack: true,
             }) as Duplex;
 
             const sessionData = { container, stream };
 
-            console.log(`       [SessionManager - createInternal] Storing final session data for '${sessionId}'`);
             this.sessions[sessionId] = sessionData;
 
             return sessionData;
@@ -82,19 +72,18 @@ export class SessionManager {
     }
 
     async delete(sessionId: string): Promise<void> {
-        console.log(`-----> [SessionManager] DELETING session: '${sessionId}'`);
         creationPromises.delete(sessionId); // Stop anyone waiting on creation
         const sessionData = this.sessions[sessionId];
         delete this.sessions[sessionId];
 
-        if (sessionData) {
-            try {
-                sessionData.stream.destroy();
-                await sessionData.container.stop().catch(e => {/* Ignore errors if already stopped */});
-            } catch (error) {
-                console.error(`       [SessionManager] Error during cleanup for '${sessionId}':`, error);
-            }
-        }
+        // if (sessionData) {
+        //     try {
+        //         sessionData.stream.destroy();
+        //         await sessionData.container.stop().catch(e => {/* Ignore errors if already stopped */});
+        //     } catch (error) {
+        //         console.error(`       [SessionManager] Error during cleanup for '${sessionId}':`, error);
+        //     }
+        // }
     }
 }
 
