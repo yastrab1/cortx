@@ -13,7 +13,7 @@ function emptyState(): ExecutionState {
     }
 }
 
-function createRootTask(prompt: string, resultQueue: AsyncQueue<TaskGeneralEvent>): TaskData {
+function createRootTask(prompt: string, resultQueue: AsyncQueue): TaskData {
     const rootTask: TaskData = {
         id: "root",
         status: "pending",
@@ -60,7 +60,7 @@ function isEndEvent(event: TaskGeneralEvent) {
 
 export async function* runEngine(prompt: string) {
     let state: ExecutionState = emptyState();
-    const resultQueue = new AsyncQueue<TaskGeneralEvent>();
+    const resultQueue = new AsyncQueue();
     state.tasks["root"] = createRootTask(prompt, resultQueue);
     runAgent("root", resultQueue, state);
 
@@ -69,7 +69,7 @@ export async function* runEngine(prompt: string) {
         const results: TaskGeneralEvent[] = await resultQueue.dequeue();
         for (const result of results) {
             finishedExecution ||= isEndEvent(result);
-            processEvent(result, (newState) => state = newState(state)); // Event should always have single responsibility otherwise the snapshot taking will mess up the state setting function
+
             yield result;
         }
     }
