@@ -1,20 +1,18 @@
 import { ExecutionState, TaskEvent, TaskCreatedEvent, TaskStatusChangeEvent, TaskPlanningSubresults, TaskExecutionSubresults } from "@/lib/types";
 
-function processEvent(event: string, setState: (state: (prev: ExecutionState) => ExecutionState) => void) {
-    const eventObject = JSON.parse(event) as TaskEvent;
-
-    switch (eventObject.eventType) {
+export function processEvent(event: TaskEvent, setState: (state: (prev: ExecutionState) => ExecutionState) => void) {
+    switch (event.eventType) {
         case "task_created":
-            processTaskCreatedEvent(eventObject as TaskCreatedEvent, setState);
+            processTaskCreatedEvent(event as TaskCreatedEvent, setState);
             break;
         case "task_status_change":
-            processTaskStatusChangeEvent(eventObject as TaskStatusChangeEvent, setState);
+            processTaskStatusChangeEvent(event as TaskStatusChangeEvent, setState);
             break;
         case "task_planning_subresults":
-            processTaskPlanningSubresults(eventObject as TaskPlanningSubresults, setState);
+            processTaskPlanningSubresults(event as TaskPlanningSubresults, setState);
             break;
         case "task_execution_subresults":
-            processTaskExecutionSubresults(eventObject as TaskExecutionSubresults);
+            processTaskExecutionSubresults(event as TaskExecutionSubresults);
             break;
     }
 }
@@ -100,7 +98,8 @@ export async function fetchStreamedData(params: string, state: ExecutionState, s
                 continue;
             }
 
-            processEvent(event, setState);
+            const eventObject = JSON.parse(event) as TaskEvent;
+            processEvent(eventObject, setState);
         }
 
         buffer = "";

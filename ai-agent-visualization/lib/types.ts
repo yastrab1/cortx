@@ -1,3 +1,5 @@
+import { LanguageModel } from "ai";
+
 export interface TaskExecution {
   id: string
   name: string
@@ -12,7 +14,7 @@ export interface TaskExecution {
   result?: TaskResult
 }
 
-export type TaskStatus = 
+export type TaskStatus =
   | 'pending'
   | 'planning'
   | 'executing'
@@ -75,8 +77,8 @@ export interface TaskData {
   agentDefinition: string;
   context: string[];
   upcomingTasks: string[];
-  model: string;
-  
+  model: LanguageModel;
+
   planningSubresults: string[];
   executionSubresults: string[];
   planSubtasks: TaskID[];
@@ -122,3 +124,18 @@ export interface TaskExecutionSubresults extends TaskGeneralEvent {
 }
 
 export type TaskEvent = TaskCreatedEvent | TaskStatusChangeEvent | TaskPlanningSubresults | TaskExecutionSubresults | TaskGeneralEvent;
+
+export interface RawTask {
+  name: string;
+  goal: string;
+  dependencies: string[];
+  agentDefinition: string;
+  context: string[];
+  model: string;
+}
+
+export interface RawPlan {
+  analysis: string;
+  subtasks: RawTask[];
+  benefitFromSplitting: boolean;
+}

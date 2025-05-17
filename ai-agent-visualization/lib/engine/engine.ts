@@ -1,6 +1,8 @@
 import { AsyncQueue } from "./asyncQueue";
 import { TaskGeneralEvent, TaskStatusChangeEvent, ExecutionState, TaskData, TaskID, TaskStatus } from "@/lib/types"
-import { plan } from "./planner";
+import { runAgent } from "./agent";
+import { processEvent } from "@/app/hooks/fetchStreamedData";
+import { resolveModel } from "./resolveModel";
 
 function emptyState(): ExecutionState {
     return {
@@ -8,6 +10,34 @@ function emptyState(): ExecutionState {
         taskCountByStatus: {} as Record<TaskStatus, number>,
         errors: [] as string[],
         executionLog: [] as string[],
+    }
+}
+
+function createRootTask(prompt: string): TaskData {
+    return {
+        id: "root",
+        status: "pending",
+        name: "Root Task",
+        goal: prompt,
+        dependencies: [],
+        agentDefinition: "root",
+        context: [],
+        upcomingTasks: [],
+        model: resolveModel("gpt-o4-mini"),
+        planningSubresults: [],
+        executionSubresults: [],
+        planSubtasks: [],
+        taskResult: {
+            type: "root",
+            content: "",
+            childResults: []
+        },
+        taskCreationTime: Date.now(),
+        taskStartTime: 0,
+        taskEndPlanningTime: 0,
+        taskEndExecutionTime: 0, 
+        taskEndTime: 0,
+        expanded: true
     }
 }
 
@@ -20,15 +50,16 @@ function isEndEvent(event: TaskGeneralEvent) {
 }
 
 export async function* runEngine(prompt: string) {
-    const state: ExecutionState = emptyState();
+    let state: ExecutionState = emptyState();
     const resultQueue = new AsyncQueue<TaskGeneralEvent>();
-    plan(prompt, resultQueue, state);
+    runAgent(prompt, resultQueue, state);
 
     let finishedExecution = false;
     while (!finishedExecution) {
         const results: TaskGeneralEvent[] = await resultQueue.dequeue();
         for (const result of results) {
             finishedExecution ||= isEndEvent(result);
+            processEvent(result, (newState) => state = newState(state)); // Event should always have single responsibility otherwise the snapshot taking will mess up the state setting function
             yield result;
         }
     }

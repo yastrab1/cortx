@@ -10,7 +10,7 @@ export async function POST(req) {
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
 
-    const agentEvents = runEngine("test prompt");
+    const agentEvents = runEngine("test prmopt");
 
     const writeEvents = async () => {
         for await (const event of agentEvents) {
