@@ -7,6 +7,17 @@ import { join } from "path";
 import { resolveModel } from "./resolveModel";
 import { plannerSystemPrompt } from "./prompts";
 
+function getTime() {
+    return new Date().toLocaleString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit', 
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    }).replace(',','').replace(' at', ',')
+}
+
 const plannerOutputSchema = z.object({
     analysis: z.string(),
     subtasks: z.array(z.object({
@@ -114,10 +125,10 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue<TaskG
     // Started planning event
     const startedPlanningEvent: TaskStatusChangeEvent = {
         eventType: "task_status_change",
-        timestamp: Date.now().toString(),
+        timestamp: getTime(),
         taskId: taskID,
         status: "planning",
-        log: `[${Date.now().toString()}] Started planning task ${taskID}`
+        log: `[${getTime()}] Started planning task ${taskID}`
     };
     resultQueue.enqueue(startedPlanningEvent);
 
@@ -139,39 +150,39 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue<TaskG
 
     const planningSubresultsEvent: TaskPlanningSubresults = {
         eventType: "task_planning_subresults",
-        timestamp: Date.now().toString(),
+        timestamp: getTime(),
         taskId: taskID,
         subresults: plan.map(task => task.name),
-        log: `[${Date.now().toString()}] Generated plan for task ${taskID}`
+        log: `[${getTime()}] Generated plan for task ${taskID}`
     };
     resultQueue.enqueue(planningSubresultsEvent);
 
     for (const task of plan) {
         const taskCreatedEvent: TaskCreatedEvent = {
             eventType: "task_created",
-            timestamp: Date.now().toString(),
+            timestamp: getTime(),
             taskId: task.id,
             taskData: task,
-            log: `[${Date.now().toString()}] Created task ${task.id}`
+            log: `[${getTime()}] Created task ${task.id}`
         };
         resultQueue.enqueue(taskCreatedEvent);
     }
 
     const planningResultsEvent: TaskPlanningResults = {
         eventType: "task_planning_results",
-        timestamp: Date.now().toString(),
+        timestamp: getTime(),
         taskId: taskID,
         result: plan.map(task => task.id),
-        log: `[${Date.now().toString()}] Generated plan for task ${taskID}`
+        log: `[${getTime()}] Generated plan for task ${taskID}`
     };
     resultQueue.enqueue(planningResultsEvent);
 
     const finishedTaskEvent: TaskStatusChangeEvent = {
         eventType: "task_status_change",
-        timestamp: Date.now().toString(),
+        timestamp: getTime(),
         taskId: taskID,
         status: "executing",
-        log: `[${Date.now().toString()}] Finished task ${taskID}`
+        log: `[${getTime()}] Finished task ${taskID}`
     };
     resultQueue.enqueue(finishedTaskEvent);
 }
