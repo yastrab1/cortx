@@ -1,4 +1,4 @@
-FROM python:latest
+FROM python:bookworm
 
 # Install necessary packages
 RUN apt-get update && \
