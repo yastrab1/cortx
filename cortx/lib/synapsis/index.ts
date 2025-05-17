@@ -8,9 +8,7 @@ import {
     tool,
     ToolSet
 } from 'ai';
-import {Experimental_StdioMCPTransport as StdioMCPTransport} from 'ai/mcp-stdio';
 import * as dotenv from 'dotenv';
-import {createGoogleGenerativeAI, google} from '@ai-sdk/google';
 import {z} from 'zod';
 import {RawPlan} from "./types";
 import express, {json} from "express";
@@ -34,7 +32,7 @@ export default async function prompt(prompt: string) {
         context: "",
         dependencies: [],
         upcomingTasks: [],
-        model: "o3-mini-2025-01-31"
+        model: "o4-mini"
     })
     verbosePlan(plan)
 

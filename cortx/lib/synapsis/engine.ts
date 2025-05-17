@@ -19,7 +19,7 @@ dotenv.config();
 
 const systemPrompt = " TRY YOUR ABSOLUTE HARDEST," +
     " IF YOU DONT KNOW JUST THINK OF SOMETHING CLOSE ENOUGH. NEVER ASK OR HANG." +
-    "Write into files using echo [your file] > file.Write always the whole file, not by lines!!!. The OS is alpine with python"
+    "Write into files using your writeFile tool.The OS is alpine with python"
 
 const mcpURLRegistry: string[] = [" http://localhost:3001/sse"]
 
@@ -155,9 +155,9 @@ export async function execute(plan: Plan) {
     const outputs: { [taskName: string]: CoreMessage } = {};
     while (nodes.tasks.length > 0) {
         for (const task of nodes.tasks) {
-            const context = []
+            const context:CoreMessage[] = []
             for (const dependency of task.dependencies) {
-                context.push(outputs[dependency.name])
+                context.push({role:"user",content:`The dependency ${dependency.name} with goal ${dependency.goal} outputted`+outputs[dependency.name]} as CoreMessage)
             }
             const result = await executeTask(task, context)
             outputs[task.name] = {role: "user", content: result}
