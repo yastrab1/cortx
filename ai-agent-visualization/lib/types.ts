@@ -91,6 +91,13 @@ export interface TaskData {
   expanded: boolean;
 }
 
+export interface TaskGeneralEvent {
+  eventType: string;
+  timestamp: string;
+  taskId: TaskID;
+  log: string;
+}
+
 export interface ExecutionState {
   tasks: Record<TaskID, TaskData>;
   taskCountByStatus: Record<TaskStatus, number>;
@@ -98,31 +105,20 @@ export interface ExecutionState {
   executionLog: string[];
 }
 
-export interface TaskCreatedEvent {
-  eventType: string;
-  timestamp: string;
+export interface TaskCreatedEvent extends TaskGeneralEvent {
   taskData: TaskData;
 }
 
-export interface TaskStatusChangeEvent {
-  eventType: string;
-  timestamp: string;
-  taskId: string;
+export interface TaskStatusChangeEvent extends TaskGeneralEvent {
   status: TaskStatus;
 }
 
-export interface TaskPlanningSubresults {
-  eventType: string;
-  timestamp: string;
-  taskId: string;
+export interface TaskPlanningSubresults extends TaskGeneralEvent {
   subresults: string[];
 }
 
-export interface TaskExecutionSubresults {
-  eventType: string;
-  timestamp: string;
-  taskId: string;
+export interface TaskExecutionSubresults extends TaskGeneralEvent {
   subresults: string[];
 }
 
-export type TaskEvent = TaskCreatedEvent | TaskStatusChangeEvent | TaskPlanningSubresults | TaskExecutionSubresults;
+export type TaskEvent = TaskCreatedEvent | TaskStatusChangeEvent | TaskPlanningSubresults | TaskExecutionSubresults | TaskGeneralEvent;
