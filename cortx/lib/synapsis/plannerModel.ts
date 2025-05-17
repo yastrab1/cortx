@@ -120,7 +120,7 @@ export function postprocessResponse(plans: RawPlan): Plan {
 
 export async function generatePlan(task: Task): Promise<Plan> {
     const promptMessages = taskToMessages(task);
-
+    console.log("Generating plan with ",promptMessages.map(message => message.content).join("\n"))
     const response = await generateObject({
         model: resolveModel(task.model),
         messages: promptMessages,

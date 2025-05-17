@@ -27,7 +27,9 @@ export default async function prompt(prompt: string) {
     const plan = await generatePlan({
         name: "master",
         goal: prompt,
-        agentDefinition: "You are a master in planning",
+        agentDefinition: "You are a master in planning. " +
+            "Do not overthink, try to use as few nodes as necessary, but do not execute any tasks yourself. " +
+            "Make always at least one node extra.NEVER make agents like 'plan initial structure' jump straight to implementation. Sub-agents cannot append to a file, only overwrite, so plan accordingly",
         context: "",
         dependencies: [],
         upcomingTasks: [],
@@ -39,3 +41,4 @@ export default async function prompt(prompt: string) {
     return {response: await planToMermaid(plan)}
 }
 
+1
