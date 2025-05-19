@@ -1,8 +1,9 @@
 // --- Inside SessionManager.ts ---
 import { Container } from "dockerode";
 import { Duplex } from "node:stream";
-import Docker from 'dockerode'; // Needs docker instance
-
+import Docker from 'dockerode';
+import dotenv from "dotenv"; // Needs docker instance
+dotenv.config();
 interface SessionData {
     container: Container;
     stream: Duplex;
@@ -10,9 +11,12 @@ interface SessionData {
 
 // Map to store promises for ongoing session creations
 const creationPromises = new Map<string, Promise<SessionData>>();
-const docker = new Docker(); // Or pass it into the manager
 
+let docker:Docker;
 export class SessionManager {
+    constructor(private docker: Docker = new Docker()) {
+        this.docker = docker
+    }
     private sessions: { [sessionId: string]: SessionData } = {};
 
     async getOrCreate(sessionId: string): Promise<SessionData> {
@@ -39,8 +43,8 @@ export class SessionManager {
     private async createSessionInternal(sessionId: string): Promise<SessionData> {
         try {
             console.log(`       [SessionManager - createInternal] Launching container for '${sessionId}'`);
-            const container = await docker.createContainer({
-                Image: 'cortx-compute:latest',
+            const container = await this.docker.createContainer({
+                Image: process.env.CONTAINER_IMAGE,
                 Cmd: ['bash', "-l", "-i"],
                 Tty: true, OpenStdin: true, StdinOnce: false, AttachStdin: true,
                 AttachStdout: false, AttachStderr: true,
@@ -87,4 +91,5 @@ export class SessionManager {
     }
 }
 
-export const sessionManager = new SessionManager();
+console.log(process.env.DOCKER_HOST || "/var/run/docker.sock")
+export const sessionManager = new SessionManager(new Docker({socketPath:process.env.DOCKER_HOST || "/var/run/docker.sock"}));

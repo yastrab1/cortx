@@ -8,7 +8,7 @@ import {Duplex} from "node:stream"
 import {sessionManager} from "./SessionManager";
 import * as readline from "node:readline";
 import dotenv from 'dotenv';
-dotenv.config();
+
 import winston from 'winston';
 import {write} from "node:fs";
 
@@ -36,18 +36,14 @@ const server = new McpServer({
 });
 
 const app = express();
-console.log("Using docekr at ",process.env.DOCKER_HOST || '/var/run/docker.sock')
-const docker = new Docker({
-    socketPath: process.env.DOCKER_HOST || '/var/run/docker.sock'
-});
+
 
 
 async function callTerminal(sessionId: string, command: string): Promise<string> {
-    if (!sessionId) { // Should not happen if called with "1"
+    if (!sessionId) {
         return "No session ID provided";
     }
     const marker = randomUUID();
-    // const escapedCommand = command.replace(/(["`\\$])/g, '\\$1');
     command = `${command}; echo "${marker}"`;
 
     try {
