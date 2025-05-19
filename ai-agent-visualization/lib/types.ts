@@ -1,4 +1,4 @@
-import { LanguageModel } from "ai";
+import {CoreMessage, LanguageModel } from "ai";
 
 export interface TaskExecution {
   id: string
@@ -27,6 +27,7 @@ export type TaskEventType =
   | 'task_status_change'
   | 'task_planning_subresults'
   | 'task_execution_subresults'
+  | 'task_execution_results'
   | 'task_planning_results';
 
 export interface ExecutionStep {
@@ -134,6 +135,10 @@ export interface TaskExecutionSubresults extends TaskGeneralEvent {
 
 export interface TaskPlanningResults extends TaskGeneralEvent {
   result: TaskID[];
+}
+
+export interface ExecutionResults extends TaskGeneralEvent {
+  result: TaskResult
 }
 
 export type TaskEvent = TaskCreatedEvent | TaskStatusChangeEvent | TaskPlanningSubresults | TaskExecutionSubresults | TaskGeneralEvent | TaskPlanningResults;
