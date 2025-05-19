@@ -116,7 +116,6 @@ export async function fetchStreamedData(prompt: string, setState: (state: (prev:
                 continue;
             }
 
-            console.log("event", event);
             const eventObject = JSON.parse(event) as TaskEvent;
             processEvent(eventObject, setState);
         }

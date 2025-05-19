@@ -11,11 +11,11 @@ function getTime() {
     return new Date().toLocaleString('en-US', {
         month: 'long',
         day: 'numeric',
-        hour: '2-digit', 
+        hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
         hour12: true
-    }).replace(',','').replace(' at', ',')
+    }).replace(',', '').replace(' at', ',')
 }
 
 const plannerOutputSchema = z.object({
@@ -49,7 +49,7 @@ function taskToMessages(task: TaskData): CoreMessage[] {
     return [systemMessage, userMessage];
 }
 
-function rawTaskToTaskData(rawTask: RawTask): TaskData {
+function rawTaskToTaskData(rawTask: RawTask, newDepth: number): TaskData {
     return {
         id: rawTask.name,
         name: rawTask.name,
@@ -76,15 +76,16 @@ function rawTaskToTaskData(rawTask: RawTask): TaskData {
         taskEndExecutionTime: 0,
         taskEndTime: 0,
         expanded: false,
+        depth: newDepth,
         status: "pending"
     };
 }
 
-function planArrayToDictionary(plans: RawPlan): { [key: string]: TaskData } {
+function planArrayToDictionary(plans: RawPlan, newDepth: number): { [key: string]: TaskData } {
     let planDictionary: { [key: string]: TaskData } = {};
 
     for (const task of plans.subtasks) {
-        planDictionary[task.name] = rawTaskToTaskData(task);
+        planDictionary[task.name] = rawTaskToTaskData(task, newDepth);
     }
 
     return planDictionary;
@@ -100,8 +101,8 @@ function planDictionaryToArray(planDictionary: { [key: string]: TaskData }): Tas
     return plan;
 }
 
-export function postprocessResponse(plans: RawPlan): TaskData[] {
-    let planDictionary = planArrayToDictionary(plans);
+export function postprocessResponse(plans: RawPlan, newDepth: number): TaskData[] {
+    let planDictionary = planArrayToDictionary(plans, newDepth);
 
     for (const task of Object.values(planDictionary)) {
         for (const dependency of task.dependencies) {
@@ -116,10 +117,24 @@ export function postprocessResponse(plans: RawPlan): TaskData[] {
     return planDictionaryToArray(planDictionary);
 }
 
-export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue, state: ExecutionState): Promise<boolean> {
+export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue, state: ExecutionState, maxDepth: number): Promise<boolean> {
     const task = state.tasks[taskID];
     if (!task) {
         throw new Error(`Task ${taskID} not found in state`);
+    }
+
+    if (task.depth >= maxDepth) {
+        // Skip to execution
+        const startedPlanningEvent: TaskStatusChangeEvent = {
+            eventType: "task_status_change",
+            timestamp: getTime(),
+            taskId: taskID,
+            status: "executing",
+            log: `[${getTime()}] Reached maximum depth for task ${taskID} - skipping to execution`
+        };
+        resultQueue.enqueue(startedPlanningEvent, state);
+
+        return false;
     }
 
     // Started planning event
@@ -130,13 +145,13 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue, stat
         status: "planning",
         log: `[${getTime()}] Started planning task ${taskID}`
     };
-    resultQueue.enqueue(startedPlanningEvent,state);
+    resultQueue.enqueue(startedPlanningEvent, state);
 
     const promptMessages = taskToMessages(task);
     // TODO: implement correct logging with events: console.log("Generating plan with ", promptMessages.map(message => message.content).join("\n"));
-    
+
     const response = await generateObject({
-        model: task.model || "gemini-2.0-flash",
+        model: task.model,
         messages: promptMessages,
         schema: plannerOutputSchema,
     });
@@ -146,7 +161,7 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue, stat
     }
 
     const rawPlan = response.object as RawPlan;
-    const plan = postprocessResponse(rawPlan);
+    const plan = postprocessResponse(rawPlan, task.depth + 1);
 
     const planningSubresultsEvent: TaskPlanningSubresults = {
         eventType: "task_planning_subresults",
@@ -155,7 +170,7 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue, stat
         subresults: plan.map(task => task.name),
         log: `[${getTime()}] Generated plan for task ${taskID}`
     };
-    resultQueue.enqueue(planningSubresultsEvent,state);
+    resultQueue.enqueue(planningSubresultsEvent, state);
 
     for (const task of plan) {
         const taskCreatedEvent: TaskCreatedEvent = {
@@ -165,7 +180,7 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue, stat
             taskData: task,
             log: `[${getTime()}] Created task ${task.id}`
         };
-        resultQueue.enqueue(taskCreatedEvent,state);
+        resultQueue.enqueue(taskCreatedEvent, state);
     }
 
     const planningResultsEvent: TaskPlanningResults = {
@@ -173,18 +188,18 @@ export async function generatePlan(taskID: TaskID, resultQueue: AsyncQueue, stat
         timestamp: getTime(),
         taskId: taskID,
         result: plan.map(task => task.id),
-        log: `[${getTime()}] Generated plan for task ${taskID}`
+        log: `[${getTime()}] Planning subresults for task ${taskID}`
     };
-    resultQueue.enqueue(planningResultsEvent,state);
+    resultQueue.enqueue(planningResultsEvent, state);
 
     const finishedTaskEvent: TaskStatusChangeEvent = {
         eventType: "task_status_change",
         timestamp: getTime(),
         taskId: taskID,
         status: "executing",
-        log: `[${getTime()}] Finished task ${taskID}`
+        log: `[${getTime()}] Finished planning for task ${taskID}`
     };
-    resultQueue.enqueue(finishedTaskEvent,state);
+    resultQueue.enqueue(finishedTaskEvent, state);
 
     return rawPlan.benefitFromSplitting;
 }

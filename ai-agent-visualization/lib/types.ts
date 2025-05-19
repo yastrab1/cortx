@@ -97,6 +97,8 @@ export interface TaskData {
   taskEndExecutionTime: number;
   taskEndTime: number;
 
+  depth: number;
+
   expanded: boolean;
 }
 

@@ -37,6 +37,7 @@ function createRootTask(prompt: string, resultQueue: AsyncQueue, state: Executio
         taskEndPlanningTime: 0,
         taskEndExecutionTime: 0, 
         taskEndTime: 0,
+        depth: 0,
         expanded: true
     }
     const rootTaskCreatedEvent: TaskCreatedEvent = {
