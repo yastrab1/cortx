@@ -1,4 +1,6 @@
-import { ExecutionState, TaskEvent, TaskCreatedEvent, TaskStatusChangeEvent, TaskPlanningSubresults, TaskExecutionSubresults, TaskPlanningResults } from "@/lib/types";
+import { ExecutionState, TaskEvent, TaskCreatedEvent, TaskStatusChangeEvent, TaskPlanningSubresults, TaskExecutionSubresults, TaskPlanningResults, ExecutionResults } from "@/lib/types";
+
+
 
 export function processEvent(event: TaskEvent, setState: (state: (prev: ExecutionState) => ExecutionState) => void) {
     switch (event.eventType) {
@@ -16,6 +18,8 @@ export function processEvent(event: TaskEvent, setState: (state: (prev: Executio
             break;
         case "task_planning_results":
             processTaskPlanningResults(event as TaskPlanningResults, setState);
+        case "task_execution_results":
+            processTaskExecutionResults(event as ExecutionResults, setState);
             break;
     }
 }
@@ -83,6 +87,21 @@ function processTaskPlanningResults(event: TaskPlanningResults, setState: (state
         },
         executionLog: [...prevState?.executionLog, event.log]
     }));
+}
+
+function processTaskExecutionResults(event: ExecutionResults, setState: {
+    (state: { (prev: ExecutionState): ExecutionState }): void
+}) {
+    console.log("tak_execution_results:",event)
+    setState(prevState => ({
+        ...prevState,
+        tasks: {
+            ...prevState?.tasks,
+            [event.taskId]: { ...prevState?.tasks[event.taskId], taskResult: event.result },
+        },
+        executionLog: [...prevState?.executionLog, event.log]
+    }));
+
 }
 
 export async function fetchStreamedData(prompt: string, setState: (state: (prev: ExecutionState) => ExecutionState) => void) {
