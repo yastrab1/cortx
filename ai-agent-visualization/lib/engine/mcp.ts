@@ -1,6 +1,6 @@
 import { experimental_createMCPClient, ToolSet } from "ai";
 
-const mcpURLRegistry: string[] = [" http://localhost:3001/sse"]
+const mcpURLRegistry: string[] = ["http://13.53.91.173:3001/sse"]
 
 export class MCPRegistry {
     private static instance: MCPRegistry;

@@ -17,11 +17,11 @@ function getTime() {
     return new Date().toLocaleString('en-US', {
         month: 'long',
         day: 'numeric',
-        hour: '2-digit', 
+        hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
         hour12: true
-    }).replace(',','').replace(' at', ',')
+    }).replace(',', '').replace(' at', ',')
 }
 
 function taskToString(task: TaskData): string {
@@ -45,10 +45,12 @@ function taskToMessages(task: TaskData): CoreMessage[] {
 export async function executeTask(taskID: TaskID, resultQueue: AsyncQueue, state: ExecutionState) {
     const task = state.tasks[taskID];
     const messages = taskToMessages(task);
+    console.log("pre mcp await", taskID);
     const registry = await MCPRegistry.getInstance();
-    console.log("executing task", taskID);
+    console.log("post mcp await", taskID);
 
     while (true) {
+        console.log("while loop", taskID);
         const response = await generateText({
             model: task.model,
             messages: messages,
@@ -79,25 +81,26 @@ export async function executeTask(taskID: TaskID, resultQueue: AsyncQueue, state
             } as unknown as CoreMessage)
         }
     }
-    resultQueue.enqueue({
-        status:"completed",
-        eventType:"task_status_change",
-        timestamp: getTime(),
-        taskId: taskID,
-    }as TaskStatusChangeEvent,state)
 
     resultQueue.enqueue({
-        eventType:"task_execution_results",
+        eventType: "task_execution_results",
         timestamp: getTime(),
         taskId: taskID,
         result: {
-            type:"",
-            content:messages.map(msg=>msg.content).join("\n---\n"),
-        }as TaskResult
+            type: "",
+            content: messages.map(msg => msg.content).join("\n---\n"),
+        } as TaskResult,
+        log: `[${getTime()}] Sending execution results for task ${taskID}`
+    } as ExecutionResults, state)
 
-    }as ExecutionResults,state)
+    resultQueue.enqueue({
+        status: "completed",
+        eventType: "task_status_change",
+        timestamp: getTime(),
+        taskId: taskID,
+        log: `[${getTime()}] Finished execution for task ${taskID}`
+    } as TaskStatusChangeEvent, state)
 
-    // TODO: first complete task, than do this chceck
     for (const step of task.upcomingTasks) {
         state.tasks[step].context.push(task.taskResult.type); // TODO: change for real results
         if (state.tasks[step].dependencies.every(id => state.tasks[id].status === "completed")) {

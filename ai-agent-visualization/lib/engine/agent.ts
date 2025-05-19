@@ -20,6 +20,7 @@ const MAX_DEPTH = 1;
 
 export async function runAgent(id: TaskID, resultQueue: AsyncQueue, state: ExecutionState) {
     const benefitFromSplitting = await generatePlan(id, resultQueue, state, MAX_DEPTH);
+    
     if (!benefitFromSplitting) {
         executeTask(id, resultQueue, state);
         return;
