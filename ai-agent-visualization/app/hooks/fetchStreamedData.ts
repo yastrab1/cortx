@@ -12,7 +12,7 @@ export function processEvent(event: TaskEvent, setState: (state: (prev: Executio
             processTaskPlanningSubresults(event as TaskPlanningSubresults, setState);
             break;
         case "task_execution_subresults":
-            processTaskExecutionSubresults(event as TaskExecutionSubresults);
+            processTaskExecutionSubresults(event as TaskExecutionSubresults, setState);
             break;
         case "task_planning_results":
             processTaskPlanningResults(event as TaskPlanningResults, setState);
@@ -61,8 +61,16 @@ function processTaskPlanningSubresults(event: TaskPlanningSubresults, setState: 
     }));
 }
 
-function processTaskExecutionSubresults(event: TaskExecutionSubresults) {
+function processTaskExecutionSubresults(event: TaskExecutionSubresults, setState: (state: (prev: ExecutionState) => ExecutionState) => void) {
     console.log("task_execution_subresults: ", event);
+    setState(prevState => ({
+        ...prevState,
+        tasks: {
+            ...prevState?.tasks,
+            [event.taskId]: { ...prevState?.tasks[event.taskId], executionSubresults: [...prevState?.tasks[event.taskId].executionSubresults, ...event.subresults] },
+        },
+        executionLog: [...prevState?.executionLog, event.log]
+    }));
 }
 
 function processTaskPlanningResults(event: TaskPlanningResults, setState: (state: (prev: ExecutionState) => ExecutionState) => void) {
