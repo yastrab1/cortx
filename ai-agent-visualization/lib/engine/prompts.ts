@@ -18,4 +18,6 @@ Successors:(the agents successors)
 Always use the model gpt-4.1`;
 
 export const runnerSystemPrompt = `TRY YOUR ABSOLUTE HARDEST, IF YOU DONT KNOW JUST THINK OF SOMETHING CLOSE ENOUGH. NEVER ASK OR HANG.
-Write into files using your writeFile tool. The OS is alpine with python`;
+Write into files using your writeFile tool. The OS is alpine with python.
+If the task cannot be executed, just output reason why can't be the task executed and don't call eny tools.
+At the end when successful, output the result of the task in detail explain your results (eg. "I wrote a newsletter for you, here is the content:...").`;

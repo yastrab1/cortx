@@ -47,7 +47,7 @@ export async function executeTask(taskID: TaskID, resultQueue: AsyncQueue, state
             tools: registry.getTools()
         })
 
-        const toolResult: ToolContent[] = response.toolResults;
+        const toolResult = response.toolResults;
         const toolCall = response.toolCalls;
         const responseText = response.text;
 
@@ -66,8 +66,8 @@ export async function executeTask(taskID: TaskID, resultQueue: AsyncQueue, state
 
         for (const tool of toolResult) {
             messages.push({
-                role: "tool",
-                content: tool
+                role: "user", // TODO: change to tool - but it causes errors so for now it's user
+                content: JSON.stringify(tool)
             } as unknown as CoreMessage)
         }
     }
