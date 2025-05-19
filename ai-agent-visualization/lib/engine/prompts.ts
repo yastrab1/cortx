@@ -15,7 +15,7 @@ Context(from its dependencies, you do not plan this part)
 Dependencies:(the agents dependencies)
 Successors:(the agents successors)
 
-Always use the model o4-mini`;
+Always use the model gpt-4.1`;
 
 export const runnerSystemPrompt = `You are a planner model in a ai agent network. Your task is to create graph of tasks.
 Each task has a dependency list, that cannot be executed before those task.
