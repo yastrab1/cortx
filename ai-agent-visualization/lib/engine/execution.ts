@@ -1,4 +1,4 @@
-import { TaskData, ExecutionState, TaskID, TaskExecutionSubresults } from "../types"
+import { TaskData, ExecutionState, TaskID, TaskExecutionSubresults, TaskStatusChangeEvent } from "../types"
 import { runAgent } from "./agent";
 import { AsyncQueue } from "./asyncQueue"
 import { CoreMessage, generateText, ToolContent } from "ai";
@@ -60,7 +60,7 @@ export async function executeTask(taskID: TaskID, resultQueue: AsyncQueue, state
         };
         resultQueue.enqueue(subresultEvents, state);
 
-        if (!toolResult || !toolCall) {
+        if (toolResult.length === 0 || toolCall.length === 0) {
             break;
         }
 
@@ -71,6 +71,15 @@ export async function executeTask(taskID: TaskID, resultQueue: AsyncQueue, state
             } as unknown as CoreMessage)
         }
     }
+
+    const finishedExecutionEvent: TaskStatusChangeEvent = {
+        eventType: "task_status_change",
+        timestamp: getTime(),
+        taskId: taskID,
+        status: "completed",
+        log: `[${getTime()}] Finished execution for task ${taskID}`
+    };
+    resultQueue.enqueue(finishedExecutionEvent, state);
 
     // TODO: first complete task, than do this chceck
     for (const step of task.upcomingTasks) {
