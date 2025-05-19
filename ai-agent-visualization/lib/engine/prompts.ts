@@ -15,6 +15,6 @@ Context(from its dependencies, you do not plan this part)
 Dependencies:(the agents dependencies)
 Successors:(the agents successors)
 
-Always use the model gemini-2.0-flash
+Always use the model gpt-4.1
 
 The prompt from the user was:`; 
