@@ -9,7 +9,7 @@ import {
 } from "../types"
 import { runAgent } from "./agent";
 import { AsyncQueue } from "./asyncQueue"
-import { CoreMessage, generateText, ToolContent } from "ai";
+import {CoreMessage, generateText, streamText, ToolContent} from "ai";
 import { runnerSystemPrompt } from "./prompts";
 import { MCPRegistry } from "./mcp";
 
@@ -45,30 +45,30 @@ function taskToMessages(task: TaskData): CoreMessage[] {
 export async function executeTask(taskID: TaskID, resultQueue: AsyncQueue, state: ExecutionState) {
     const task = state.tasks[taskID];
     const messages = taskToMessages(task);
-    console.log("pre mcp await", taskID);
     const registry = await MCPRegistry.getInstance();
-    console.log("post mcp await", taskID);
 
     while (true) {
         console.log("while loop", taskID);
-        const response = await generateText({
+        const {textStream,toolResults,toolCalls} = streamText({
             model: task.model,
             messages: messages,
-            tools: registry.getTools()
+            tools: registry.getTools(),
+            toolCallStreaming:false
         })
-
-        const toolResult = response.toolResults;
-        const toolCall = response.toolCalls;
-        const responseText = response.text;
-
-        const subresultEvents: TaskExecutionSubresults = {
-            eventType: "task_execution_subresults",
-            timestamp: getTime(),
-            taskId: taskID,
-            log: `[${getTime()}] Subresults of task: ${taskID} with subresult: ${responseText}`,
-            subresults: [responseText]
-        };
-        resultQueue.enqueue(subresultEvents, state);
+        let response = ""
+        for await (const chunk of textStream) {
+            response += chunk;
+            const subresultEvents: TaskExecutionSubresults = {
+                eventType: "task_execution_subresults",
+                timestamp: getTime(),
+                taskId: taskID,
+                log: `[${getTime()}] Subresults of task: ${taskID} with subresult: ${chunk}`,
+                subresults: [chunk]
+            };
+            resultQueue.enqueue(subresultEvents, state);
+        }
+        const toolResult = await toolResults;
+        const toolCall = await toolCalls;
 
         if (toolCall.length == 0 || toolResult.length == 0) {
             break;
