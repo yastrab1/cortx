@@ -17,6 +17,6 @@ WORKDIR /app
 
 RUN ["chmod", "+x", "/entrypoint.sh"]
 ENV CONTAINER_IMAGE=yastrab1/cortx:latest
-EXPOSE 3001
+EXPOSE 8000
 ENTRYPOINT ["/usr/local/bin/dockerd-entrypoint.sh"]
 CMD ["/entrypoint.sh"]

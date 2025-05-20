@@ -1,4 +1,4 @@
-import {McpServer} from "@modelcontextprotocol/sdk/dist/esm/server/mcp";
+import {McpServer} from "@modelcontextprotocol/sdk/server/mcp";
 import {z} from "zod";
 import {logger} from "./logger";
 import {callTerminal, writeFile} from "./terminal";
@@ -35,7 +35,7 @@ export function defineTools(server: McpServer) {
             path: z.string(),
             content: z.string()
         },
-        async ({path, content}, extra: { sessionId?: string; }) => {
+        async ({path, content}:{path:string,content:string}, extra: { sessionId?: string; }) => {
             return await writeFile("1", path, content);
         }
     )
@@ -45,7 +45,7 @@ export function defineTools(server: McpServer) {
         {
             path: z.string(),
         },
-        async ({path}, extra: { sessionId?: string; }) => {
+        async ({path}:{path:string}, extra: { sessionId?: string; }) => {
             if (!extra.sessionId) return ["No session id provided"]
             const result = await callTerminal("1", `cat ${path}`);
             return {
