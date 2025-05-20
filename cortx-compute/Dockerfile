@@ -1,28 +1,22 @@
-FROM python:latest
+# Start from the official Docker-in-Docker image
+FROM docker:latest
+# Install Node.js (via Alpine package or NodeSource)
+# Here we use node v20 from Alpine community repo
+ENV DOCKER_TLS_CERTDIR=""
+ENV DOCKER_HOST=tcp://0.0.0.0:2375
 
-# Install necessary packages
-RUN apt-get update && \
-    apt-get install -y sudo bash strace tzdata && \
-    rm -rf /var/lib/apt/lists/* && \
-    apt-get install -y tzdata && \
-        ln -fs /usr/share/zoneinfo/Europe/Bratislava /etc/localtime && \
-        dpkg-reconfigure -f noninteractive tzdata
+RUN apk add --no-cache nodejs npm
+RUN apk add sudo
 
-# Create a new user 'runner' with a home directory and bash shell
-RUN useradd -m -s /bin/bash runner
 
-# Add 'runner' to the 'sudo' group
-RUN usermod -aG sudo runner
+# Set a working directory
+WORKDIR /app
 
-# Configure passwordless sudo for the 'sudo' group
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/nopasswd && \
-    chmod 0440 /etc/sudoers.d/nopasswd
+ COPY . /app
+ COPY ./entrypoint.sh /entrypoint.sh
 
-# Switch to the 'runner' user
-USER runner
-
-# Set the working directory
-WORKDIR /home/runner
-
-# Start bash shell
-CMD ["bash"]
+RUN ["chmod", "+x", "/entrypoint.sh"]
+ENV CONTAINER_IMAGE=yastrab1/cortx:latest
+EXPOSE 8000
+ENTRYPOINT ["/usr/local/bin/dockerd-entrypoint.sh"]
+CMD ["/entrypoint.sh"]
