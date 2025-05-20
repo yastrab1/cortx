@@ -4,6 +4,7 @@ const mcpURLRegistry: string[] = ["http://13.53.91.173:3001/sse"]
 
 export class MCPRegistry {
     private static instance: MCPRegistry;
+    private static creationPromise:Promise<MCPRegistry>;
     public tools: ToolSet = {};
 
     private constructor() {
@@ -28,10 +29,13 @@ export class MCPRegistry {
     }
 
     public static async getInstance(): Promise<MCPRegistry> {
-        if (!MCPRegistry.instance) {
-            return await MCPRegistry.createInstance();
+        if (!MCPRegistry.instance && !MCPRegistry.creationPromise) {
+            MCPRegistry.creationPromise = MCPRegistry.createInstance()
         }
-        return MCPRegistry.instance;
+        if (!MCPRegistry.instance) {
+            return MCPRegistry.creationPromise;
+        }
+        return MCPRegistry.instance
     }
 
 
