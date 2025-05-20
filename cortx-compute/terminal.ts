@@ -53,9 +53,10 @@ export async function callTerminal(sessionId: string, command: string): Promise<
 
 export async function writeFile(sessionId: string, path: string, content: string) {
     if (!sessionId) return ["No session id provided"]
-    console.log("Calling command " + `echo "${JSON.stringify(content).slice(1, -1)}" > ${path}`)
+    const command = `printf "${JSON.stringify(content).slice(1, -1)}" > ${path}`;
+    console.log("Calling command:" + command)
 
-    const result = await callTerminal("1", `printf "${JSON.stringify(content).slice(1, -1)}" > ${path}`);
+    const result = await callTerminal("1", command);
     return {
         content: [
             {
