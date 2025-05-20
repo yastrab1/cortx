@@ -21,7 +21,7 @@ const systemPrompt = " TRY YOUR ABSOLUTE HARDEST," +
     " IF YOU DONT KNOW JUST THINK OF SOMETHING CLOSE ENOUGH. NEVER ASK OR HANG." +
     "Write into files using your writeFile tool.The OS is alpine with python"
 
-const mcpURLRegistry: string[] = [" http://localhost:3001/sse"]
+const mcpURLRegistry: string[] = ["13.53.91.173:3001/sse"]
 
 class MCPRegistry {
     private static instance: MCPRegistry;
