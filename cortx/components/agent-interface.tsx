@@ -10,9 +10,14 @@ import { ExecutionLogs } from "./execution-logs";
 import { ExecutionState, TaskStatus, TaskData, TaskID } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { fetchStreamedData } from "@/app/hooks/fetchStreamedData";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { usePostHog } from "posthog-js/react";
 
 export default function AgentInterface() {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [userPrompt, setUserPrompt] = useState(initialPrompt);
+  const posthog = usePostHog();
 
   const execState: ExecutionState = {
     tasks: { } as Record<TaskID, TaskData>,
@@ -24,12 +29,22 @@ export default function AgentInterface() {
 
   useEffect(() => {
     console.log("state", state);
+
+    // Check if the root task is completed
+    if (state.tasks["root"] && state.tasks["root"].status === "completed") {
+      setIsProcessing(false);
+    }
   }, [state]);
 
   const onStart = useCallback(() => {
     setIsProcessing(true);
-    fetchStreamedData(initialPrompt, setState);
-  }, [state, setState]);
+    // Track prompt submission event
+    posthog.capture("prompt_submitted", {
+      prompt_length: userPrompt.length,
+      prompt_content: userPrompt.substring(0, 100) // Only capture first 100 chars for privacy
+    });
+    fetchStreamedData(userPrompt, setState);
+  }, [userPrompt, state, setState, posthog]);
 
   return (
     <Card className="border border-gray-800 bg-gray-900/50 backdrop-blur-sm shadow-lg overflow-hidden">
@@ -66,6 +81,29 @@ export default function AgentInterface() {
               <ExecutionLogs logs={state.executionLog} />
             </TabsContent>
           </Tabs>
+
+          <div className="mt-6 flex gap-2">
+            <Input
+              placeholder="Enter your prompt here..."
+              value={userPrompt}
+              onChange={(e) => setUserPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !isProcessing && userPrompt.trim()) {
+                  e.preventDefault();
+                  onStart();
+                }
+              }}
+              className="flex-grow bg-gray-800 border-gray-700 text-white"
+              disabled={isProcessing}
+            />
+            <Button 
+              onClick={onStart} 
+              disabled={isProcessing || !userPrompt.trim()}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isProcessing ? "Processing..." : "Execute"}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -12,6 +12,7 @@ import { AsyncQueue } from "./asyncQueue"
 import {CoreMessage, generateText, streamText, ToolContent} from "ai";
 import { runnerSystemPrompt } from "./prompts";
 import { MCPRegistry } from "./mcp";
+import PostHogClient from "../posthog";
 
 function getTime() {
     return new Date().toLocaleString('en-US', {
@@ -48,8 +49,27 @@ export async function executeTask(taskID: TaskID, resultQueue: AsyncQueue, state
     // state.tasks[taskID].taskResult.content
     const registry = await MCPRegistry.getInstance();
     let response = ""
+
+    // Initialize PostHog client
+    const posthog = PostHogClient();
+
     while (true) {
         console.log("while loop", taskID);
+
+        // Track subagent query event
+        posthog.capture({
+            distinctId: 'server',
+            event: 'subagent_queried',
+            properties: {
+                task_id: taskID,
+                task_name: task.name,
+                task_goal: task.goal,
+                agent_definition: task.agentDefinition,
+                model: task.model.name || 'unknown',
+                parent_task: task.taskParent || 'root'
+            }
+        });
+
         const {textStream,toolResults,toolCalls} = streamText({
             model: task.model,
             messages: messages,
