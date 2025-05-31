@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: A simple Go SAM application
+Resources:
+  MyGoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: routeHandler
+      Handler: bootstrap
+      Runtime: go1.x
+      CodeUri: MyGoFunction
+      Architectures:
+      - arm64
+      MemorySize: 128
+      Timeout: 30
+      Events:
+        MyApi:
+          Type: Api
+          Properties:
+            Path: /hello
+            Method: GET
+    Metadata:
+      SamResourceId: MyGoFunction
