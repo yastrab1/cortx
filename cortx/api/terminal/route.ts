@@ -40,7 +40,8 @@ export async function POST(request: Request) {
         const {instanceID, commandID} = await initiateResponse.json() as { instanceID: string, commandID: string };
 
         const checkCommandQuery = `${awsFuncURL}/checkCommand?secretKey=${apiKey}&sessionID=${sessionID}&instanceID=${instanceID}&commandID=${commandID}`;
-        setInterval(async () => {
+        while (true) {
+
             const response = await fetch(checkCommandQuery)
 
             const body = await response.json() as checkCommandType;
@@ -50,10 +51,10 @@ export async function POST(request: Request) {
             if (body.completed) {
                 return Response.json({result: body.result});
             }
-        }, 1000)
-        return Response.json({});
-    }
-    catch (e) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+        }
+    } catch (e) {
         return Response.json(e)
     }
 
