@@ -1,53 +1,65 @@
-import {fetchInternalImage} from "next/dist/server/image-optimizer";
-
-interface callCommandBody{
+interface callCommandBody {
     command: string;
     apiKey: string;
-    sessionID:string;
+    sessionID: string;
 }
 
-interface checkCommandType{
-    completed:boolean;
-    result:string;
+interface checkCommandType {
+    completed: boolean;
+    result: string;
 }
+
 export async function POST(request: Request) {
-    const awsFuncURL = process.env.AWS_URL;
+    try {
+        const awsFuncURL = process.env.AWS_URL;
 
-    if (request.method != "POST"){
-        return Response.error()
-    }
-    const {command, apiKey, sessionID} = await request.json() as callCommandBody;
+        if (request.method != "POST") {
+            return Response.error()
+        }
+        const {command, apiKey, sessionID} = await request.json() as callCommandBody;
 
-    const createInstanceQuery = `${awsFuncURL}/createInstance?secretKey=${apiKey}&sessionID=${sessionID}`;
-    const instanceResponse = await fetch(createInstanceQuery)
-    if (!instanceResponse.ok){
-        return Response.json("Failed to create instance")
-    }
+        const createInstanceQuery = `${awsFuncURL}/createInstance?secretKey=${apiKey}&sessionID=${sessionID}`;
+        const instanceResponse = await fetch(createInstanceQuery)
+        const instanceResponseJson = await instanceResponse.json()
+        if (!instanceResponse.ok) {
+            return Response.json("Failed to create instance" + instanceResponseJson)
+        }
+        console.log("Creating instance: " + instanceResponseJson)
 
-    const initiateCommandQuery = `${awsFuncURL}/initiateCommand?secretKey=${apiKey}&sessionID=${sessionID}`;
-    const initiateResponse = await fetch(initiateCommandQuery,{
-        method: "POST",
-        body: JSON.stringify({
-            command:command
+        const initiateCommandQuery = `${awsFuncURL}/initiateCommand?secretKey=${apiKey}&sessionID=${sessionID}`;
+        const initiateResponse = await fetch(initiateCommandQuery, {
+            method: "POST",
+            body: JSON.stringify({
+                command: command
+            })
         })
-    })
-    if (!initiateResponse.ok){
-        return Response.json("Failed to initiate query")
+        const initiateResponseJson = await initiateResponse.json()
+
+        console.log("Initiaitng command: " + initiateResponseJson)
+        if (!initiateResponse.ok) {
+            return Response.json("Failed to initiate query" + initiateResponseJson)
+        }
+
+        const {instanceID, commandID} = await initiateResponse.json() as { instanceID: string, commandID: string };
+
+        const checkCommandQuery = `${awsFuncURL}/checkCommand?secretKey=${apiKey}&sessionID=${sessionID}&instanceID=${instanceID}&commandID=${commandID}`;
+        while (true) {
+            console.log("Polling: " + instanceResponseJson)
+            const response = await fetch(checkCommandQuery)
+
+            const body = await response.json() as checkCommandType;
+            if (!response.ok) {
+                return Response.json("Failed to check command" + body)
+            }
+            if (body.completed) {
+                return Response.json({result: body.result});
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+        }
+    } catch (e) {
+        console.log("error")
+        return Response.json((e as Error).toString())
     }
 
-    const {instanceID,commandID} = await initiateResponse.json() as {instanceID:string,commandID:string};
-
-    const checkCommandQuery = `${awsFuncURL}/checkCommand?secretKey=${apiKey}&sessionID=${sessionID}&instanceID=${instanceID}&commandID=${commandID}`;
-    setInterval(async ()=>{
-        const response = await fetch(checkCommandQuery)
-        if (!response.ok){
-            return Response.json("Failed to check command")
-        }
-        const body = await response.json() as checkCommandType;
-        if (body.completed) {
-            return Response.json({result:body.result});
-        }
-    },1000)
-
-    return Response.json({});
 }
