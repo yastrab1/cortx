@@ -21,13 +21,13 @@ export async function POST(request: Request) {
     const createInstanceQuery = `${awsFuncURL}/createInstance?secretKey=${apiKey}&sessionID=${sessionID}`;
     const instanceResponse = await fetch(createInstanceQuery)
     if (!instanceResponse.ok){
-        return Response.error()
+        return Response.json("Failed to create instance")
     }
 
     const initiateCommandQuery = `${awsFuncURL}/initiateCommand?secretKey=${apiKey}&sessionID=${sessionID}`;
     const initiateResponse = await fetch(initiateCommandQuery)
     if (!initiateResponse.ok){
-        return Response.error()
+        return Response.json("Failed to initiate query")
     }
 
     const {instanceID,commandID} = await initiateResponse.json() as {instanceID:string,commandID:string};
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     setInterval(async ()=>{
         const response = await fetch(checkCommandQuery)
         if (!response.ok){
-            return Response.error()
+            return Response.json("Failed to check command")
         }
         const body = await response.json() as checkCommandType;
         if (body.completed) {

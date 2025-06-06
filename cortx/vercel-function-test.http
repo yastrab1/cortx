@@ -1,0 +1,11 @@
+### GET request to example server
+POST cortx-gamma.vercel.app/api/terminal/route
+
+
+{
+    "command":"echo "HELLO WORLD"
+    "sessionID:"jabadabadu"
+    "apiKey":"skibiditoilet123"
+}
+
+###
