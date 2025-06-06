@@ -1,10 +1,10 @@
 ### GET request to example server
-POST cortx-gamma.vercel.app/api/terminal/route
-
+POST https://cortx-git-aws-integration-yastrab1s-projects.vercel.app?_vercel_share=TdSjjmBmjkzxkZIqP0gkZNhHgYolfDrI/api/terminal/route
+Content-Type: application/json
 
 {
-    "command":"echo "HELLO WORLD"
-    "sessionID:"jabadabadu"
+    "command":"echo 'HELLO WORLD'",
+    "sessionID":"jabadabadu",
     "apiKey":"skibiditoilet123"
 }
 
