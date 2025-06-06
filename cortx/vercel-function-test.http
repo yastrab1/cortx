@@ -1,6 +1,7 @@
 ### GET request to example server
 POST https://cortx-gamma.vercel.app/api/terminal/route
 Content-Type: application/json
+x-vercel-protection-bypass:jabadabadabadabadu123jabadabaduu
 
 {
     "command":"echo 'HELLO WORLD'",
