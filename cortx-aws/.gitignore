@@ -1,0 +1,4 @@
+./cortx-aws
+./.aws-sam/
+./.idea/
+./main
