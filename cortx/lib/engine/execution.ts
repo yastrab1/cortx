@@ -47,7 +47,7 @@ export async function executeTask(taskID: TaskID, resultQueue: AsyncQueue, state
     const task = state.tasks[taskID];
     const messages = taskToMessages(task);
     // state.tasks[taskID].taskResult.content
-    const registry = await MCPRegistry.getInstance();
+    const registry = await MCPRegistry.getInstance(taskID);
     let response = ""
 
     // Initialize PostHog client

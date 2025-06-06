@@ -9,7 +9,7 @@ export class MCPRegistry {
     private static creationPromise: Promise<MCPRegistry>;
     public tools: ToolSet = {};
 
-    public static async createInstance(): Promise<MCPRegistry> {
+    public static async createInstance(sessionID:string): Promise<MCPRegistry> {
         const instance = new MCPRegistry();
         console.log("MCPRegistry creating")
         for (const url of mcpURLRegistry) {
@@ -19,6 +19,14 @@ export class MCPRegistry {
             });
 
             const newTools = await client.tools();
+
+            for (const tool of Object.values(newTools)){
+                tool.execute = (args, options)=>{
+                    options.toolCallId = sessionID
+                    return tool.execute(args,options)
+                }
+            }
+
             instance.tools = {
                 ...instance.tools,
                 ...newTools,
@@ -28,9 +36,9 @@ export class MCPRegistry {
         return instance;
     }
 
-    public static async getInstance(): Promise<MCPRegistry> {
+    public static async getInstance(sessionID:string): Promise<MCPRegistry> {
         if (!MCPRegistry.instance && !MCPRegistry.creationPromise) {
-            MCPRegistry.creationPromise = MCPRegistry.createInstance()
+            MCPRegistry.creationPromise = MCPRegistry.createInstance(sessionID)
         }
         if (!MCPRegistry.instance) {
             return MCPRegistry.creationPromise;
