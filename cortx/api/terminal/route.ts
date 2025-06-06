@@ -25,7 +25,12 @@ export async function POST(request: Request) {
     }
 
     const initiateCommandQuery = `${awsFuncURL}/initiateCommand?secretKey=${apiKey}&sessionID=${sessionID}`;
-    const initiateResponse = await fetch(initiateCommandQuery)
+    const initiateResponse = await fetch(initiateCommandQuery,{
+        method: "POST",
+        body: JSON.stringify({
+            command:command
+        })
+    })
     if (!initiateResponse.ok){
         return Response.json("Failed to initiate query")
     }
