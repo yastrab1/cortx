@@ -1,5 +1,5 @@
 ### GET request to example server
-POST https://cortx-git-aws-integration-yastrab1s-projects.vercel.app?_vercel_share=TdSjjmBmjkzxkZIqP0gkZNhHgYolfDrI/api/terminal/route
+POST https://cortx-gamma.vercel.app/api/terminal/route
 Content-Type: application/json
 
 {
