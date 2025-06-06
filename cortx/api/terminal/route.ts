@@ -24,6 +24,7 @@ export async function POST(request: Request) {
         if (!instanceResponse.ok) {
             return Response.json("Failed to create instance" + instanceResponseJson)
         }
+        console.log("Creating instance: " + instanceResponseJson)
 
         const initiateCommandQuery = `${awsFuncURL}/initiateCommand?secretKey=${apiKey}&sessionID=${sessionID}`;
         const initiateResponse = await fetch(initiateCommandQuery, {
@@ -33,6 +34,8 @@ export async function POST(request: Request) {
             })
         })
         const initiateResponseJson = await initiateResponse.json()
+
+        console.log("Initiaitng command: " + initiateResponseJson)
         if (!initiateResponse.ok) {
             return Response.json("Failed to initiate query" + initiateResponseJson)
         }
@@ -41,7 +44,7 @@ export async function POST(request: Request) {
 
         const checkCommandQuery = `${awsFuncURL}/checkCommand?secretKey=${apiKey}&sessionID=${sessionID}&instanceID=${instanceID}&commandID=${commandID}`;
         while (true) {
-
+            console.log("Polling: " + instanceResponseJson)
             const response = await fetch(checkCommandQuery)
 
             const body = await response.json() as checkCommandType;
