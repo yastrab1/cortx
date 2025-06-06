@@ -1,0 +1,14 @@
+### GET request to example server
+GET https://y6yods7thhwe3ymencvv4lhtdm0hcmxz.lambda-url.eu-north-1.on.aws/$default/createInstance?secretKey=skibiditoilet123&sessionID=xyz
+
+###
+POST https://y6yods7thhwe3ymencvv4lhtdm0hcmxz.lambda-url.eu-north-1.on.aws/$default/initiateCommand?secretKey=skibiditoilet123&sessionID=xyz
+Content-Type: application/json
+
+{
+    "command":"sudo apt install golang -y"
+}
+###
+GET https://y6yods7thhwe3ymencvv4lhtdm0hcmxz.lambda-url.eu-north-1.on.aws/$default/checkCommand?secretKey=skibiditoilet123&sessionID=xyz&commandID=523e24b4-ee2b-4152-a358-7e6069bd3af0&instanceID=i-0d5ea3fb1d9eb2f52
+Content-Type: application/json
+

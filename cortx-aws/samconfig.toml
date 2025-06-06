@@ -1,4 +1,5 @@
 version = 0.1
+
 [default.deploy.parameters]
 stack_name = "routeHandler"
 resolve_s3 = true
@@ -6,4 +7,14 @@ s3_prefix = "routeHandler"
 region = "eu-north-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-image_repositories = []
+image_repositories = [ ]
+
+[default.global.parameters]
+stack_name = "routeHandler"
+region = "eu-north-1"
+
+[default.sync.parameters]
+template_file = "/home/luki/GolandProjects/cortx-aws/template.yaml"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-ieqebm9crwun"
+dependency_layer = false
+watch = true
