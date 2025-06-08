@@ -76,9 +76,9 @@ func createInstance(ctx context.Context, cfg aws.Config, dynamoClient *dynamodb.
 		MaxCount:         aws.Int32(1),
 		KeyName:          &keyPairName,
 		SecurityGroupIds: securityGroupIDs,
-		InstanceMarketOptions: &ec2types.InstanceMarketOptionsRequest{
-			MarketType: ec2types.MarketTypeSpot,
-		},
+		//InstanceMarketOptions: &ec2types.InstanceMarketOptionsRequest{
+		//	MarketType: ec2types.MarketTypeSpot,
+		//}, //TODO when in prod uncomment this - spot is free tier ineligible
 		IamInstanceProfile: &ec2types.IamInstanceProfileSpecification{
 			Name: aws.String(iamRoleName),
 		},
@@ -127,7 +127,7 @@ func createInstance(ctx context.Context, cfg aws.Config, dynamoClient *dynamodb.
 
 	return &Response{
 		StatusCode: 200,
-		Body:       fmt.Sprintf("Successful launch of the instance %s for session %s Hello from version 2!!", instanceID, sessionID),
+		Body:       fmt.Sprintf("{\"instanceID\":\"%s\"}", instanceID),
 	}, nil
 }
 
