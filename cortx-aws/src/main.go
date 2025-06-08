@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -19,9 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-)
 
-import (
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
 
@@ -61,7 +60,7 @@ func createInstance(ctx context.Context, cfg aws.Config, dynamoClient *dynamodb.
 	if err == nil {
 		return &Response{
 			StatusCode: 400,
-			Body:       "Session already exists",
+			Body:       "{\"error\":\"Session already exists\"}",
 		}, nil
 	}
 
@@ -136,7 +135,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 	if request.QueryStringParameters["secretKey"] != secretKey {
 		return &Response{
 			StatusCode: 401,
-			Body:       "Unauthorized request",
+			Body:       "{\"error\":\"Unauthorized request\"}",
 		}, nil
 	}
 
@@ -166,7 +165,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 		if commandID == "" || instanceID == "" {
 			return &Response{
 				StatusCode: 400,
-				Body:       "Missing commandID or instanceID parameter",
+				Body:       "{\"error\":\"Missing commandID or instanceID parameter\"}",
 			}, nil
 		}
 
@@ -175,7 +174,7 @@ func handleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 
 	return &Response{
 		StatusCode: 404,
-		Body:       "Path not found: " + path + " with stage: " + stage,
+		Body:       "{\"error\":\"Path not found: " + path + " with stage: " + stage + "\"}",
 	}, nil
 }
 
@@ -229,7 +228,7 @@ func initiateCommand(ctx context.Context, cfg aws.Config, dynamoClient *dynamodb
 	})
 	if err != nil {
 		log.Printf("failed to send command: %v", err)
-		return &Response{StatusCode: 500, Body: fmt.Sprintf("Failed to send command: %v", err)}, nil
+		return &Response{StatusCode: 500, Body: "{\"error\":\"Failed to send command: " + strings.ReplaceAll(fmt.Sprintf("%v", err), "\"", "'") + "\"}"}, nil
 	}
 
 	commandID := *sendCommandOutput.Command.CommandId
@@ -261,7 +260,7 @@ func checkCommand(ctx context.Context, cfg aws.Config, commandID string, instanc
 	})
 	if err != nil {
 		log.Printf("failed to get command invocation: %v", err)
-		return &Response{StatusCode: 500, Body: fmt.Sprintf("Failed to get command invocation: %v", err)}, nil
+		return &Response{StatusCode: 500, Body: "{\"error\":\"Failed to get command invocation: " + strings.ReplaceAll(fmt.Sprintf("%v", err), "\"", "'") + "\"}"}, nil
 	}
 
 	status := getInvocationOutput.Status
