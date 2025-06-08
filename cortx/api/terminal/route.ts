@@ -25,7 +25,7 @@ export async function POST(request: Request) {
             return Response.json("Failed to create instance" + instanceResponseJson)
         }
         console.log("Creating instance: " + instanceResponseJson)
-
+        await new Promise(resolve => setTimeout(resolve,1000))
         const initiateCommandQuery = `${awsFuncURL}/initiateCommand?secretKey=${apiKey}&sessionID=${sessionID}`;
         const initiateResponse = await fetch(initiateCommandQuery, {
             method: "POST",
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         }
     } catch (e) {
         console.log(e)
-        return Response.json(e)
+        return Response.json((e as Error).toString())
     }
 
 }
